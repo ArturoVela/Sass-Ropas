@@ -265,7 +265,7 @@ $usersInEmpresa = array_filter($allUserSucursales, function($user) use ($empId) 
       </div>
 
       <!-- Listado de sucursales -->
-      <h2 class="h4 text-danger-emphasis mb-3">Sucursales Activas</h2>
+      <h2 class="h4 text-danger-emphasis mb-3">Crear usuarios para sucursales activas</h2>
       <div class="row row-cols-1 row-cols-md-3 g-4">
         <?php foreach($sucs as $s): ?>
           <div class="col">

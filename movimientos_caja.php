@@ -17,6 +17,54 @@ $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
 $errorMsg = '';
 $successMsg = '';
 
+// --- Manejar cambio de sucursal ---
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'cambiar_sucursal') {
+    $_SESSION['sucursal_seleccionada'] = intval($_POST['sucursal_id']);
+    header('Location: movimientos_caja.php');
+    exit;
+}
+
+// --- Obtener sucursal seleccionada de la sesión ---
+$sucursalSeleccionada = $_SESSION['sucursal_seleccionada'] ?? null;
+
+// --- Llamada al endpoint de sucursales para obtener el nombre ---
+$curl = curl_init();
+curl_setopt_array($curl, array(
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/sucursales',
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_ENCODING => '',
+  CURLOPT_MAXREDIRS => 10,
+  CURLOPT_TIMEOUT => 0,
+  CURLOPT_FOLLOWLOCATION => true,
+  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+  CURLOPT_CUSTOMREQUEST => 'GET',
+  CURLOPT_HTTPHEADER => array(
+    'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
+  ),
+));
+$response = curl_exec($curl);
+curl_close($curl);
+
+$sucursalesCompletas = json_decode($response, true);
+if (!is_array($sucursalesCompletas)) $sucursalesCompletas = [];
+
+// --- Filtrado para mostrar solo sucursales de la empresa actual ---
+$sucursalesEmpresa = array_filter($sucursalesCompletas, function($sucursal) use ($empId) {
+    return isset($sucursal['empresa']['id']) && 
+           $sucursal['empresa']['id'] == $empId;
+});
+
+// --- Obtener nombre de la sucursal seleccionada ---
+$nombreSucursalSeleccionada = '';
+if ($sucursalSeleccionada) {
+    foreach ($sucursalesEmpresa as $sucursal) {
+        if ($sucursal['id'] == $sucursalSeleccionada) {
+            $nombreSucursalSeleccionada = $sucursal['nombre'];
+            break;
+        }
+    }
+}
+
 // --- Llamada al endpoint de movimientos de caja ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
@@ -44,8 +92,17 @@ $movimientosEmpresa = array_filter($movimientosCompletos, function($movimiento) 
            $movimiento['caja']['sucursalId']['empresa']['id'] == $empId;
 });
 
+// --- Filtrado adicional por sucursal seleccionada ---
+$movimientosSucursal = $movimientosEmpresa;
+if ($sucursalSeleccionada) {
+    $movimientosSucursal = array_filter($movimientosEmpresa, function($movimiento) use ($sucursalSeleccionada) {
+        return isset($movimiento['caja']['sucursalId']['id']) && 
+               $movimiento['caja']['sucursalId']['id'] == $sucursalSeleccionada;
+    });
+}
+
 // --- Cálculo de estadísticas ---
-$total_movimientos = count($movimientosEmpresa);
+$total_movimientos = count($movimientosSucursal);
 
 // Calcular movimientos por tipo
 $movimientos_ingresos = 0;
@@ -53,7 +110,7 @@ $movimientos_egresos = 0;
 $total_ingresos = 0;
 $total_egresos = 0;
 
-foreach ($movimientosEmpresa as $movimiento) {
+foreach ($movimientosSucursal as $movimiento) {
     if ($movimiento['monto'] > 0) {
         $movimientos_ingresos++;
         $total_ingresos += $movimiento['monto'];
@@ -67,7 +124,7 @@ foreach ($movimientosEmpresa as $movimiento) {
 $total_neto = $total_ingresos - $total_egresos;
 
 // Filtrar movimientos del día
-$movimientosHoy = array_filter($movimientosEmpresa, function($movimiento) {
+$movimientosHoy = array_filter($movimientosSucursal, function($movimiento) {
     return date('Y-m-d') === date('Y-m-d', strtotime($movimiento['fecha']));
 });
 
@@ -126,6 +183,35 @@ $movimientos_hoy = count($movimientosHoy);
         </div>
       </div>
 
+      <!-- Selector de Sucursal -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h6 class="mb-0 text-danger">
+                <i class="bi bi-building me-2"></i>Sucursal Actual
+              </h6>
+              <p class="text-muted mb-0 small">
+                <?= $nombreSucursalSeleccionada ? $nombreSucursalSeleccionada : 'Seleccione una sucursal' ?>
+              </p>
+            </div>
+            <div class="col-md-6">
+              <form method="post" class="d-flex gap-2">
+                <input type="hidden" name="action" value="cambiar_sucursal">
+                <select name="sucursal_id" class="form-select" onchange="this.form.submit()">
+                  <option value="">Seleccionar Sucursal</option>
+                  <?php foreach ($sucursalesEmpresa as $sucursal): ?>
+                    <option value="<?= $sucursal['id'] ?>" <?= $sucursalSeleccionada == $sucursal['id'] ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($sucursal['nombre'], ENT_QUOTES) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Tarjetas de Estadísticas -->
       <div class="row mb-4">
         <div class="col-md-2">
@@ -134,6 +220,9 @@ $movimientos_hoy = count($movimientosHoy);
               <i class="bi bi-arrow-left-right text-primary fs-1"></i>
               <h4 class="mt-2 fw-bold"><?= number_format($total_movimientos) ?></h4>
               <p class="text-muted mb-0">Total Movimientos</p>
+              <?php if ($nombreSucursalSeleccionada): ?>
+                <small class="text-muted"><?= $nombreSucursalSeleccionada ?></small>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -143,6 +232,9 @@ $movimientos_hoy = count($movimientosHoy);
               <i class="bi bi-calendar-check text-info fs-1"></i>
               <h4 class="mt-2 fw-bold"><?= number_format($movimientos_hoy) ?></h4>
               <p class="text-muted mb-0">Movimientos Hoy</p>
+              <?php if ($nombreSucursalSeleccionada): ?>
+                <small class="text-muted"><?= $nombreSucursalSeleccionada ?></small>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -152,6 +244,9 @@ $movimientos_hoy = count($movimientosHoy);
               <i class="bi bi-arrow-up-circle text-success fs-1"></i>
               <h4 class="mt-2 fw-bold"><?= number_format($movimientos_ingresos) ?></h4>
               <p class="text-muted mb-0">Total Ingresos</p>
+              <?php if ($nombreSucursalSeleccionada): ?>
+                <small class="text-muted"><?= $nombreSucursalSeleccionada ?></small>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -161,6 +256,9 @@ $movimientos_hoy = count($movimientosHoy);
               <i class="bi bi-arrow-down-circle text-danger fs-1"></i>
               <h4 class="mt-2 fw-bold"><?= number_format($movimientos_egresos) ?></h4>
               <p class="text-muted mb-0">Total Egresos</p>
+              <?php if ($nombreSucursalSeleccionada): ?>
+                <small class="text-muted"><?= $nombreSucursalSeleccionada ?></small>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -170,6 +268,9 @@ $movimientos_hoy = count($movimientosHoy);
               <i class="bi bi-currency-dollar text-success fs-1"></i>
               <h4 class="mt-2 fw-bold">S/ <?= number_format($total_ingresos, 2) ?></h4>
               <p class="text-muted mb-0">Monto Ingresos</p>
+              <?php if ($nombreSucursalSeleccionada): ?>
+                <small class="text-muted"><?= $nombreSucursalSeleccionada ?></small>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -179,6 +280,9 @@ $movimientos_hoy = count($movimientosHoy);
               <i class="bi bi-currency-dollar text-danger fs-1"></i>
               <h4 class="mt-2 fw-bold">S/ <?= number_format($total_egresos, 2) ?></h4>
               <p class="text-muted mb-0">Monto Egresos</p>
+              <?php if ($nombreSucursalSeleccionada): ?>
+                <small class="text-muted"><?= $nombreSucursalSeleccionada ?></small>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -187,7 +291,12 @@ $movimientos_hoy = count($movimientosHoy);
       <!-- Tabla de Movimientos de Caja -->
       <div class="card shadow-sm">
         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 text-primary-emphasis">Historial de Movimientos</h5>
+          <h5 class="mb-0 text-primary-emphasis">
+            Historial de Movimientos
+            <?php if ($nombreSucursalSeleccionada): ?>
+              <small class="text-muted">- <?= $nombreSucursalSeleccionada ?></small>
+            <?php endif; ?>
+          </h5>
           <div class="col-md-4">
             <input type="text" id="searchInput" class="form-control" placeholder="Buscar por descripción o caja...">
           </div>
@@ -199,6 +308,7 @@ $movimientos_hoy = count($movimientosHoy);
                 <tr class="text-center">
                   <th>#</th>
                   <th class="text-start">Caja</th>
+                  <th class="text-start">Sucursal</th>
                   <th class="text-start">Descripción</th>
                   <th>Tipo</th>
                   <th>Monto</th>
@@ -225,7 +335,7 @@ $movimientos_hoy = count($movimientosHoy);
   
   <script>
     // Pasamos los datos de PHP a JavaScript de forma segura
-    const movimientosData = <?php echo json_encode(array_values($movimientosEmpresa)); ?>;
+    const movimientosData = <?php echo json_encode(array_values($movimientosSucursal)); ?>;
     
     // Configuración de paginación
     const itemsPerPage = 10;
@@ -244,7 +354,9 @@ $movimientos_hoy = count($movimientosHoy);
           <td>${startIndex + index + 1}</td>
           <td class="text-start">
             <div class="fw-bold">Caja #${movimiento.caja.id}</div>
-            <small class="text-muted">${movimiento.caja.sucursalId.nombre}</small>
+          </td>
+          <td class="text-start">
+            <span class="badge bg-info-subtle text-info-emphasis">${movimiento.caja.sucursalId.nombre}</span>
           </td>
           <td class="text-start">${movimiento.descripcion}</td>
           <td>
