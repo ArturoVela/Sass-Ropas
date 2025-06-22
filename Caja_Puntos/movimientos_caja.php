@@ -182,7 +182,7 @@ require_once 'config_colors.php';
           <i class="bi bi-arrow-left-right me-2"></i>Movimientos de Caja
         </h1>
         <div>
-          <button id="exportBtn" class="btn btn-primary d-flex align-items-center">
+          <button id="exportBtn" class="btn btn-success d-flex align-items-center">
             <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar a Excel
           </button>
         </div>

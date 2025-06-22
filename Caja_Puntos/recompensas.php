@@ -215,6 +215,8 @@ if (!empty($recompensas)) {
           <button class="btn btn-primary d-flex align-items-center me-2" data-bs-toggle="modal" data-bs-target="#createModal">
             <i class="bi bi-plus-circle-fill me-1"></i> Nueva Recompensa
           </button>
+          <p> </p>
+
           <button id="exportBtn" class="btn btn-success d-flex align-items-center">
             <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar a Excel
           </button>

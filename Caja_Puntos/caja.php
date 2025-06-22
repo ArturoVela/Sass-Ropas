@@ -537,19 +537,23 @@ require_once 'config_colors.php';
           <i class="bi bi-cash-stack me-2"></i>Gestión de Caja
         </h1>
         <div>
-          <button class="btn btn-success d-flex align-items-center me-2 <?= $ultimaCajaAbierta ? 'disabled' : '' ?>" 
+          <button class="btn btn-primary d-flex align-items-center me-2 <?= $ultimaCajaAbierta ? 'disabled' : '' ?>" 
                   data-bs-toggle="<?= $ultimaCajaAbierta ? '' : 'modal' ?>" 
                   data-bs-target="<?= $ultimaCajaAbierta ? '' : '#abrirCajaModal' ?>"
                   <?= $ultimaCajaAbierta ? 'disabled' : '' ?>
                   title="<?= $ultimaCajaAbierta ? 'Ya hay una caja abierta. Debe cerrarla antes de abrir una nueva.' : 'Abrir nueva caja' ?>">
             <i class="bi bi-cash-coin me-1"></i> Abrir Caja
           </button>
+          <p> </p>
+
           <?php if ($ultimaCajaAbierta): ?>
             <button class="btn btn-warning d-flex align-items-center me-2" data-bs-toggle="modal" data-bs-target="#cerrarCajaModal">
               <i class="bi bi-lock"></i> Cerrar Caja
             </button>
           <?php endif; ?>
-          <button id="exportBtn" class="btn btn-primary d-flex align-items-center">
+          <p> </p>
+
+          <button id="exportBtn" class="btn btn-success d-flex align-items-center">
             <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar a Excel
           </button>
         </div>
