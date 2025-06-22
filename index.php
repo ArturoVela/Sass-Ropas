@@ -2,8 +2,8 @@
 session_start();
 
 // --- CONFIGURACIÓN ---
-define('API_URL',   'http://ropas.spring.informaticapp.com:1688/api/ropas/usuarios');
-define('API_TOKEN', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmODNmOTk0ZDhjYjlkNWQ1YmVmYzM2YTM5ZWNkYTNiNzliYmI3Y2EyYjNlODQyODA0NTA3N2IyZjllOTUwODA5IiwiaWF0IjoxNzUwMjIxNDc2LCJleHAiOjQ5MDM4MjE0NzZ9.jCScz9PRkyb7W0_NeU66aLcCt2NxyatATJz7Pblo0SM');
+define('API_URL',   'http://ropas.spring.informaticapp.com:1655/api/ropas/usuarios');
+define('API_TOKEN', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmODNmOTk0ZDhjYjlkNWQ1YmVmYzM2YTM5ZWNkYTNiNzliYmI3Y2EyYjNlODQyODA0NTA3N2IyZjllOTUwODA5IiwiaWF0IjoxNzUwMjIxNDc2LCJleHAiOjQ5MDM4MjE0NzZ9.jCScz9PRkyb7W0_NeU66aLcCt2NxyatATJz7Pblo0SM'); // tu token
 
 function fetchUsuarios(): array {
     $ch = curl_init(API_URL);
@@ -27,7 +27,6 @@ function fetchUsuarios(): array {
 }
 
 $error = '';
-$success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email    = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
     $password = $_POST['password'] ?? '';
@@ -46,11 +45,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'id'      => $usr['id'],
                         'nombre'  => $usr['nombre'],
                         'rol'     => $usr['rol'],
-                        'empresa' => [
-                            'id'     => $usr['empresa']['id'],
-                            'nombre' => $usr['empresa']['nombre']
-                        ]
+                        'empresa' => $usr['empresa']
                     ];
+
+                    // --- Registrar auditoría de Login ---
+                    if ($usr['rol'] !== 'SUPERadmin') {
+                        $ch_audit = curl_init('http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria');
+                        $payload = json_encode([
+                            'usuario' => ['id' => $usr['id']],
+                            'evento' => 'INICIO DE SESIÓN',
+                            'descripcion' => 'El usuario ha iniciado sesión en el sistema.',
+                        ]);
+                        curl_setopt_array($ch_audit, [
+                            CURLOPT_RETURNTRANSFER => true,
+                            CURLOPT_CUSTOMREQUEST => 'POST',
+                            CURLOPT_POSTFIELDS => $payload,
+                            CURLOPT_HTTPHEADER => [
+                                'Content-Type: application/json',
+                                'Authorization: Bearer ' . API_TOKEN
+                            ],
+                        ]);
+                        curl_exec($ch_audit);
+                        curl_close($ch_audit);
+                    }
+
                     // Redirigir según rol
                     if ($usr['rol'] === 'SUPERadmin') {
                         header('Location: superadmin_dashboard.php');
@@ -72,430 +90,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Login | Sistema de Gestión</title>
+  <title>Login | <?= htmlspecialchars($_SESSION['user']['empresa']['nombre'] ?? '') ?></title>
 
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <!-- tsParticles -->
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.min.js"></script>
+  <!-- Google Font Montserrat -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet"/>
   <!-- CSS personalizado -->
   <link rel="stylesheet" href="css/login.css">
-  
-  <style>
-    :root {
-      --primary-color: #dc3545;
-      --primary-dark: #c82333;
-      --secondary-color: #6c757d;
-      --success-color: #28a745;
-      --warning-color: #ffc107;
-      --danger-color: #dc3545;
-      --light-color: #f8f9fa;
-      --dark-color: #343a40;
-      --gradient-primary: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-      --gradient-secondary: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-      --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-      --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-      --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
-      --border-radius: 0.75rem;
-      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    .login-container {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      position: relative;
-    }
-
-    .background-animation {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-      overflow: hidden;
-    }
-
-    .floating-shapes {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-    }
-
-    .shape {
-      position: absolute;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-      animation: float 6s ease-in-out infinite;
-    }
-
-    .shape:nth-child(1) {
-      width: 80px;
-      height: 80px;
-      top: 20%;
-      left: 10%;
-      animation-delay: 0s;
-    }
-
-    .shape:nth-child(2) {
-      width: 120px;
-      height: 120px;
-      top: 60%;
-      right: 10%;
-      animation-delay: 2s;
-    }
-
-    .shape:nth-child(3) {
-      width: 60px;
-      height: 60px;
-      bottom: 20%;
-      left: 20%;
-      animation-delay: 4s;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-20px) rotate(180deg); }
-    }
-
-    .login-card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: var(--border-radius);
-      box-shadow: var(--shadow-lg);
-      padding: 3rem;
-      width: 100%;
-      max-width: 450px;
-      position: relative;
-      overflow: hidden;
-      transition: var(--transition);
-    }
-
-    .login-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: var(--gradient-primary);
-    }
-
-    .login-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, 0.2);
-    }
-
-    .brand-section {
-      text-align: center;
-      margin-bottom: 2.5rem;
-    }
-
-    .brand-logo {
-      width: 80px;
-      height: 80px;
-      background: var(--gradient-primary);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 1.5rem;
-      box-shadow: var(--shadow);
-      transition: var(--transition);
-    }
-
-    .brand-logo:hover {
-      transform: scale(1.1);
-    }
-
-    .brand-logo i {
-      font-size: 2rem;
-      color: white;
-    }
-
-    .brand-title {
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: var(--dark-color);
-      margin-bottom: 0.5rem;
-    }
-
-    .brand-subtitle {
-      font-size: 0.95rem;
-      color: var(--secondary-color);
-      font-weight: 400;
-    }
-
-    .form-group {
-      margin-bottom: 1.5rem;
-      position: relative;
-    }
-
-    .form-control {
-      background: rgba(255, 255, 255, 0.8);
-      border: 2px solid rgba(0, 0, 0, 0.1);
-      border-radius: 0.75rem;
-      padding: 1rem 1rem 1rem 3rem;
-      font-size: 1rem;
-      transition: var(--transition);
-      backdrop-filter: blur(10px);
-    }
-
-    .form-control:focus {
-      background: rgba(255, 255, 255, 0.95);
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-      outline: none;
-    }
-
-    .form-control::placeholder {
-      color: var(--secondary-color);
-      opacity: 0.7;
-    }
-
-    .input-icon {
-      position: absolute;
-      left: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--secondary-color);
-      font-size: 1.1rem;
-      transition: var(--transition);
-    }
-
-    .form-control:focus + .input-icon {
-      color: var(--primary-color);
-    }
-
-    .btn-login {
-      background: var(--gradient-primary);
-      border: none;
-      border-radius: 0.75rem;
-      padding: 1rem 2rem;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: white;
-      width: 100%;
-      transition: var(--transition);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn-login::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: left 0.5s;
-    }
-
-    .btn-login:hover::before {
-      left: 100%;
-    }
-
-    .btn-login:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0.5rem 1.5rem rgba(220, 53, 69, 0.4);
-    }
-
-    .btn-login:active {
-      transform: translateY(0);
-    }
-
-    .alert {
-      border-radius: 0.75rem;
-      border: none;
-      padding: 1rem 1.5rem;
-      margin-bottom: 1.5rem;
-      font-weight: 500;
-      backdrop-filter: blur(10px);
-    }
-
-    .alert-danger {
-      background: rgba(220, 53, 69, 0.1);
-      color: var(--danger-color);
-      border-left: 4px solid var(--danger-color);
-    }
-
-    .alert-success {
-      background: rgba(40, 167, 69, 0.1);
-      color: var(--success-color);
-      border-left: 4px solid var(--success-color);
-    }
-
-    .footer-text {
-      text-align: center;
-      margin-top: 2rem;
-      color: var(--secondary-color);
-      font-size: 0.9rem;
-    }
-
-    .footer-text a {
-      color: var(--primary-color);
-      text-decoration: none;
-      font-weight: 500;
-    }
-
-    .footer-text a:hover {
-      text-decoration: underline;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .login-container {
-        padding: 1rem;
-      }
-      
-      .login-card {
-        padding: 2rem;
-      }
-      
-      .brand-title {
-        font-size: 1.5rem;
-      }
-    }
-
-    /* Loading animation */
-    .loading {
-      display: none;
-    }
-
-    .loading.active {
-      display: inline-block;
-    }
-
-    .spinner {
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-top: 2px solid white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Fade in animation */
-    .fade-in {
-      animation: fadeIn 0.8s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-  </style>
 </head>
 <body>
-  <div class="background-animation">
-    <div class="floating-shapes">
-      <div class="shape"></div>
-      <div class="shape"></div>
-      <div class="shape"></div>
-    </div>
-  </div>
+  <!-- Partículas -->
+  <div id="tsparticles" class="position-fixed top-0 start-0 w-100 h-100"></div>
+  <!-- Emoji rain -->
+  <div id="emojiRain"></div>
 
-  <div class="login-container">
-    <div class="login-card fade-in">
-      <div class="brand-section">
-        <div class="brand-logo">
-          <i class="fas fa-store"></i>
-        </div>
-        <h1 class="brand-title">Sistema de Gestión</h1>
-        <p class="brand-subtitle">Accede a tu panel administrativo</p>
-      </div>
+  <div class="container d-flex align-items-center justify-content-center min-vh-100">
+    <div class="card login-card shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title text-center text-danger mb-4"><strong>Login/Panel Administrativo</strong></h2>
+        <?php if ($error): ?>
+          <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
 
-      <?php if ($error): ?>
-        <div class="alert alert-danger fade-in">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          <?= htmlspecialchars($error) ?>
-        </div>
-      <?php endif; ?>
-
-      <?php if ($success): ?>
-        <div class="alert alert-success fade-in">
-          <i class="fas fa-check-circle me-2"></i>
-          <?= htmlspecialchars($success) ?>
-        </div>
-      <?php endif; ?>
-
-      <form method="post" class="needs-validation" novalidate>
-        <div class="form-group">
-          <input
-            type="email"
-            name="email"
-            class="form-control"
-            placeholder="Correo electrónico"
-            required
-            value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
-          <i class="fas fa-envelope input-icon"></i>
-          <div class="invalid-feedback">
-            Por favor ingresa un correo válido.
+        <form method="post" class="needs-validation" novalidate>
+          <div class="mb-3">
+            <input
+              type="email"
+              name="email"
+              class="form-control"
+              placeholder="Correo"
+              required
+              value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+            <div class="invalid-feedback">Ingresa un correo válido.</div>
           </div>
-        </div>
-
-        <div class="form-group">
-          <input
-            type="password"
-            name="password"
-            class="form-control"
-            placeholder="Contraseña"
-            required>
-          <i class="fas fa-lock input-icon"></i>
-          <div class="invalid-feedback">
-            Por favor ingresa tu contraseña.
+          <div class="mb-3">
+            <input
+              type="password"
+              name="password"
+              class="form-control"
+              placeholder="Contraseña"
+              required>
+            <div class="invalid-feedback">Ingresa tu contraseña.</div>
           </div>
-        </div>
-
-        <button type="submit" class="btn btn-login" id="loginBtn">
-          <span class="btn-text">Iniciar Sesión</span>
-          <span class="loading">
-            <div class="spinner"></div>
-          </span>
-        </button>
-      </form>
-
-      <div class="footer-text">
-        <p>&copy; 2024 Sistema de Gestión. Todos los derechos reservados.</p>
-        <p>Desarrollado con <i class="fas fa-heart text-danger"></i> para tu negocio</p>
+          <div class="d-grid">
+            <button type="submit" class="btn btn-danger btn-lg">Ingresar</button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
 
-  <!-- Bootstrap JS -->
+  <!-- Bootstrap JS y validación -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  
   <script>
     // Validación Bootstrap
     (() => {
@@ -506,67 +155,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           if (!form.checkValidity()) {
             e.preventDefault();
             form.classList.add('was-validated');
-          } else {
-            // Mostrar loading
-            const btn = document.getElementById('loginBtn');
-            const btnText = btn.querySelector('.btn-text');
-            const loading = btn.querySelector('.loading');
-            
-            btnText.style.display = 'none';
-            loading.classList.add('active');
-            btn.disabled = true;
           }
         });
       });
     })();
+  </script>
 
-    // Animación de entrada
-    document.addEventListener('DOMContentLoaded', function() {
-      const card = document.querySelector('.login-card');
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(30px)';
-      
-      setTimeout(() => {
-        card.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
-        card.style.opacity = '1';
-        card.style.transform = 'translateY(0)';
-      }, 100);
+  <!-- tsParticles init -->
+  <script>
+    tsParticles.load("tsparticles", {
+      background: { opacity: 0 },
+      fpsLimit: 60,
+      particles: {
+        color: { value: "#ffffff" },
+        links: { enable: true, color: "#ffffff", distance: 150, opacity: .2, width: 1 },
+        move: { enable: true, speed: 2 },
+        number: { density: { enable: true, area: 800 }, value: 80 },
+        size: { value: { min: 1, max: 3 } }
+      },
+      detectRetina: true
     });
+  </script>
 
-    // Efecto de hover en inputs
-    const inputs = document.querySelectorAll('.form-control');
-    inputs.forEach(input => {
-      input.addEventListener('focus', function() {
-        this.parentElement.style.transform = 'scale(1.02)';
-      });
-      
-      input.addEventListener('blur', function() {
-        this.parentElement.style.transform = 'scale(1)';
-      });
-    });
+  <!-- Emoji rain -->
+  <script>
+    const emojis = ['👕','👖','👗','🧥','👔','👓','🕶️','🥼','🦺','🧣','🧤','🧦','👙','👑'];
+    const rain    = document.getElementById('emojiRain');
+    function dropEmoji(){
+      const span = document.createElement('span');
+      span.className = 'rain-emoji';
+      span.innerText = emojis[Math.floor(Math.random()*emojis.length)];
+      const x = Math.random()*100;
+      const dur = 4+Math.random()*4;
+      const size= 16+Math.random()*24;
+      span.style.left = x+'%';
+      span.style.fontSize = size+'px';
+      span.style.animationDuration = dur+'s';
+      rain.appendChild(span);
+      setTimeout(()=> rain.removeChild(span), dur*1000);
+    }
+    setInterval(dropEmoji,300);
+  </script>
 
-    // Parallax effect en shapes
-    window.addEventListener('scroll', function() {
-      const scrolled = window.pageYOffset;
-      const shapes = document.querySelectorAll('.shape');
-      
-      shapes.forEach((shape, index) => {
-        const speed = 0.5 + (index * 0.1);
-        shape.style.transform = `translateY(${scrolled * speed}px)`;
-      });
-    });
-
-    // Auto-hide alerts
-    const alerts = document.querySelectorAll('.alert');
-    alerts.forEach(alert => {
-      setTimeout(() => {
-        alert.style.transition = 'opacity 0.5s ease-out';
-        alert.style.opacity = '0';
-        setTimeout(() => {
-          alert.remove();
-        }, 500);
-      }, 5000);
-    });
+  <!-- Detección de zoom y scroll -->
+  <script>
+    function detectZoom(){
+      const zoomPct = Math.round((window.outerWidth/window.innerWidth)*100);
+      if(zoomPct>=300){
+        document.documentElement.classList.add('zoom-scroll');
+        document.body.classList.add('zoom-scroll');
+      } else {
+        document.documentElement.classList.remove('zoom-scroll');
+        document.body.classList.remove('zoom-scroll');
+      }
+    }
+    window.addEventListener('load', detectZoom);
+    window.addEventListener('resize', detectZoom);
+    setInterval(detectZoom,1000);
   </script>
 </body>
 </html>

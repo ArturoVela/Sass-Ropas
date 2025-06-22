@@ -2,6 +2,27 @@
 // logout.php
 session_start();
 
+// --- Registrar auditoría ANTES de destruir la sesión ---
+if (isset($_SESSION['user']) && $_SESSION['user']['rol'] !== 'SUPERadmin') {
+    $ch = curl_init('http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria');
+    $payload = json_encode([
+        'usuario' => ['id' => $_SESSION['user']['id']],
+        'evento' => 'CIERRE DE SESIÓN',
+        'descripcion' => 'El usuario cerró su sesión en el sistema.',
+    ]);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmODNmOTk0ZDhjYjlkNWQ1YmVmYzM2YTM5ZWNkYTNiNzliYmI3Y2EyYjNlODQyODA0NTA3N2IyZjllOTUwODA5IiwiaWF0IjoxNzUwMjIxNDc2LCJleHAiOjQ5MDM4MjE0NzZ9.jCScz9PRkyb7W0_NeU66aLcCt2NxyatATJz7Pblo0SM'
+        ],
+    ]);
+    curl_exec($ch);
+    curl_close($ch);
+}
+
 // 1) Limpia todas las variables de sesión
 $_SESSION = [];
 
