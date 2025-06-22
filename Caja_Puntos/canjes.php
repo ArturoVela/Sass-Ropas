@@ -12,6 +12,8 @@ $user    = $_SESSION['user'];
 $empId   = $user['empresa']['id'];
 $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
 
+require_once 'config_colors.php';
+
 // --- Lógica de edición POST ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // Actualizar datos del canje
@@ -239,6 +241,9 @@ if (!empty($canjesEmpresa)) {
         margin-left: 250px;
       }
     }
+    .page-title {
+      color: <?= $brandColor ?> !important;
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -249,7 +254,7 @@ if (!empty($canjesEmpresa)) {
     <main class="content flex-grow-1 p-4">
 
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="display-6 text-danger fw-bold">
+        <h1 class="display-6 text-danger fw-bold page-title">
           <i class="bi bi-gift-fill me-2"></i>Canjes de Puntos
         </h1>
         <div>

@@ -13,6 +13,8 @@ $user    = $_SESSION['user'];
 $empId   = $user['empresa']['id'];
 $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
 
+require_once 'config_colors.php';
+
 // --- Llamada al endpoint para obtener el historial ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
@@ -81,6 +83,9 @@ $puntos_canjeados = array_sum(array_column(array_filter($historialEmpresa, fn($h
         margin-left: 250px;
       }
     }
+    .page-title {
+      color: <?= $brandColor ?> !important;
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -91,7 +96,7 @@ $puntos_canjeados = array_sum(array_column(array_filter($historialEmpresa, fn($h
   <main class="content flex-grow-1 p-4">
 
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="display-6 text-danger fw-bold">
+      <h1 class="display-6 fw-bold page-title">
         <i class="bi bi-clock-history me-2"></i>Historial de Puntos
       </h1>
       <button id="exportBtn" class="btn btn-success d-flex align-items-center">

@@ -483,6 +483,7 @@ if ($sucursalSeleccionada) {
     }
 }
 
+require_once 'config_colors.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -516,6 +517,12 @@ if ($sucursalSeleccionada) {
         margin-left: 250px;
       }
     }
+    .page-title {
+      color: <?= $brandColor ?> !important;
+    }
+    .metric-card h5, .metric-card .display-4 {
+      color: <?= $brandColor ?> !important;
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -526,7 +533,7 @@ if ($sucursalSeleccionada) {
     <main class="content flex-grow-1 p-4">
 
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="display-6 text-danger fw-bold">
+        <h1 class="display-6 fw-bold page-title">
           <i class="bi bi-cash-stack me-2"></i>Gestión de Caja
         </h1>
         <div>
@@ -548,34 +555,7 @@ if ($sucursalSeleccionada) {
         </div>
       </div>
 
-      <!-- Selector de Sucursal -->
-      <div class="card shadow-sm mb-4">
-        <div class="card-body">
-          <div class="row align-items-center">
-            <div class="col-md-6">
-              <h6 class="mb-0 text-success-emphasis">
-                <i class="bi bi-building me-2"></i>Sucursal Actual
-              </h6>
-              <p class="text-muted mb-0 small">
-                <?= $nombreSucursalSeleccionada ? $nombreSucursalSeleccionada : 'Seleccione una sucursal' ?>
-              </p>
-            </div>
-            <div class="col-md-6">
-              <form method="post" class="d-flex gap-2">
-                <input type="hidden" name="action" value="cambiar_sucursal">
-                <select name="sucursal_id" class="form-select" onchange="this.form.submit()">
-                  <option value="">Seleccionar Sucursal</option>
-                  <?php foreach ($sucursalesEmpresa as $sucursal): ?>
-                    <option value="<?= $sucursal['id'] ?>" <?= $sucursalSeleccionada == $sucursal['id'] ? 'selected' : '' ?>>
-                      <?= htmlspecialchars($sucursal['nombre'], ENT_QUOTES) ?>
-                    </option>
-                  <?php endforeach; ?>
-                </select>
-              </form>
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
       <?php if ($errorMsg): ?>
         <div class="alert alert-danger alert-dismissible fade show" role="alert">

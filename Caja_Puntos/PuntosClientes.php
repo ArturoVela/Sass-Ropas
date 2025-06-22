@@ -12,6 +12,8 @@ $user    = $_SESSION['user'];
 $empId   = $user['empresa']['id'];
 $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
 
+require_once 'config_colors.php';
+
 // --- Lógica de edición POST ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // Actualizar datos del punto
@@ -135,6 +137,9 @@ $total_disponibles = $total_acumulados - $total_utilizados;
         margin-left: 250px;
       }
     }
+    .page-title {
+      color: <?= $brandColor ?> !important;
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -146,7 +151,7 @@ $total_disponibles = $total_acumulados - $total_utilizados;
     <main class="content flex-grow-1 p-4">
 
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="display-6 text-danger fw-bold">
+        <h1 class="display-6 text-danger fw-bold page-title">
           <i class="bi bi-star-fill me-2"></i>Puntos de Clientes
         </h1>
         <button id="exportBtn" class="btn btn-success d-flex align-items-center">

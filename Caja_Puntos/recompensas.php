@@ -12,6 +12,8 @@ $user    = $_SESSION['user'];
 $empId   = $user['empresa']['id'];
 $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
 
+require_once 'config_colors.php';
+
 // --- Lógica de edición POST ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // Actualizar datos de la recompensa
@@ -192,6 +194,9 @@ if (!empty($recompensas)) {
         margin-left: 250px;
       }
     }
+    .page-title {
+      color: <?= $brandColor ?> !important;
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -203,7 +208,7 @@ if (!empty($recompensas)) {
     <main class="content flex-grow-1 p-4">
 
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="display-6 text-danger fw-bold">
+        <h1 class="display-6 text-danger fw-bold page-title">
           <i class="bi bi-gift-fill me-2"></i>Gestión de Recompensas
         </h1>
         <div>

@@ -1,4 +1,6 @@
 <?php
+require_once 'config_colors.php';
+
 session_start();
 if (!isset($_SESSION['user'])) {
   header('Location: index.php');
@@ -108,6 +110,17 @@ $current = basename($_SERVER['SCRIPT_NAME']);
     .main-header { position: fixed; top: 0; left: var(--sidebar-width); right: 0; height: var(--header-height); background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); z-index: 1030; transition: var(--transition); box-shadow: var(--shadow); }
     .header-content { display: flex; align-items: center; justify-content: space-between; height: 100%; padding: 0 2rem; }
     .page-title { font-size: 1.5rem; font-weight: 600; color: var(--dark-color); margin: 0; }
+    
+    /* Dynamic brand color for title */
+    .page-title {
+        color: <?= $brandColor ?> !important;
+    }
+
+    .metric-card .card-title,
+    .metric-card .display-4 {
+        color: <?= $brandColor ?> !important;
+    }
+
     .user-menu { position: relative; }
     .user-menu-toggle { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1rem; background: transparent; border: 1px solid var(--border-color); border-radius: 0.75rem; cursor: pointer; transition: var(--transition); text-decoration: none; color: var(--dark-color); }
     .user-menu-toggle:hover { background: var(--light-color); border-color: var(--primary-color); color: var(--primary-color); }
@@ -191,42 +204,11 @@ $current = basename($_SERVER['SCRIPT_NAME']);
         </div>
       </div>
 
-      <!-- Selector de Sucursal -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <div class="card shadow-sm">
-            <div class="card-body">
-              <div class="row align-items-center">
-                <div class="col-md-6">
-                  <h6 class="mb-0 text-danger">
-                    <i class="bi bi-building me-2"></i>Sucursal Actual
-                  </h6>
-                  <p class="text-muted mb-0 small">
-                    <?= $nombreSucursalSeleccionada ? $nombreSucursalSeleccionada : 'Seleccione una sucursal' ?>
-                  </p>
-                </div>
-                <div class="col-md-6">
-                  <form method="post" class="d-flex gap-2">
-                    <input type="hidden" name="action" value="cambiar_sucursal">
-                    <select name="sucursal_id" class="form-select" onchange="this.form.submit()">
-                      <option value="">Seleccionar Sucursal</option>
-                      <?php foreach ($sucursales as $sucursal): ?>
-                        <option value="<?= $sucursal['id'] ?>" <?= $sucursalSeleccionada == $sucursal['id'] ? 'selected' : '' ?>>
-                          <?= htmlspecialchars($sucursal['nombre'], ENT_QUOTES) ?>
-                        </option>
-                      <?php endforeach; ?>
-                    </select>
-                  </form>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      
 
       <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3"><div class="metric-card card h-100"><div class="card-body text-center"><h5 class="card-title text-danger">Sucursales</h5><p class="display-4 text-danger"><?= $sucCount ?></p></div></div></div>
-        <div class="col-lg-3 col-md-6 mb-3"><div class="metric-card card h-100"><div class="card-body text-center"><h5 class="card-title text-danger">Empleados</h5><p class="display-4 text-danger"><?= $empCount ?></p></div></div></div>
+        <div class="col-lg-3 col-md-6 mb-3"><div class="metric-card card h-100"><div class="card-body text-center"><h5 class="card-title">Sucursales</h5><p class="display-4"><?= $sucCount ?></p></div></div></div>
+        <div class="col-lg-3 col-md-6 mb-3"><div class="metric-card card h-100"><div class="card-body text-center"><h5 class="card-title">Empleados</h5><p class="display-4"><?= $empCount ?></p></div></div></div>
       </div>
     </div>
   </main>

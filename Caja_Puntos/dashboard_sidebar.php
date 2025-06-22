@@ -1,4 +1,5 @@
 <?php
+require_once 'config_colors.php';
 $user    = $_SESSION['user'];
 $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
 $current = basename($_SERVER['SCRIPT_NAME']);
