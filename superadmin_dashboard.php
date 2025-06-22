@@ -157,12 +157,24 @@ $audits = array_slice($audits, 0, 20);
     <div id="empGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mt-2">
       <?php foreach($empresas as $e): ?>
       <div class="col emp-item">
-        <a href="empresa.php?id=<?= $e['id'] ?>" class="text-decoration-none">
-          <div class="card emp-card h-100 p-3">
-            <h5><?= htmlspecialchars($e['nombre']) ?></h5>
-            <p class="small text-muted mb-0"><i class="bi bi-envelope"></i> <?= htmlspecialchars($e['correo']) ?></p>
-          </div>
-        </a>
+        <?php if ($e['id'] == 5): ?>
+          <!-- Empresa ID 5 redirecciona al dashboard -->
+          <a href="dashboard.php" class="text-decoration-none">
+            <div class="card emp-card h-100 p-3">
+              <h5><?= htmlspecialchars($e['nombre']) ?></h5>
+              <p class="small text-muted mb-0"><i class="bi bi-envelope"></i> <?= htmlspecialchars($e['correo']) ?></p>
+              <small class="text-primary"><i class="bi bi-arrow-right"></i> Ir al Dashboard</small>
+            </div>
+          </a>
+        <?php else: ?>
+          <!-- Otras empresas redireccionan a empresa.php -->
+          <a href="empresa.php?id=<?= $e['id'] ?>" class="text-decoration-none">
+            <div class="card emp-card h-100 p-3">
+              <h5><?= htmlspecialchars($e['nombre']) ?></h5>
+              <p class="small text-muted mb-0"><i class="bi bi-envelope"></i> <?= htmlspecialchars($e['correo']) ?></p>
+            </div>
+          </a>
+        <?php endif; ?>
       </div>
       <?php endforeach; ?>
     </div>

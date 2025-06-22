@@ -17,6 +17,50 @@ $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
 $errorMsg = '';
 $successMsg = '';
 
+// --- Obtener sucursal seleccionada de la sesión o usar la primera por defecto ---
+if (!isset($_SESSION['sucursal_seleccionada'])) {
+    // Obtener sucursales para establecer la primera como predeterminada
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+      CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/sucursales',
+      CURLOPT_RETURNTRANSFER => true,
+      CURLOPT_ENCODING => '',
+      CURLOPT_MAXREDIRS => 10,
+      CURLOPT_TIMEOUT => 0,
+      CURLOPT_FOLLOWLOCATION => true,
+      CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+      CURLOPT_CUSTOMREQUEST => 'GET',
+      CURLOPT_HTTPHEADER => array(
+        'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
+      ),
+    ));
+    $response = curl_exec($curl);
+    curl_close($curl);
+    
+    $sucursalesCompletas = json_decode($response, true);
+    if (!is_array($sucursalesCompletas)) $sucursalesCompletas = [];
+    
+    // Filtrar sucursales de la empresa actual
+    $sucursalesEmpresa = array_filter($sucursalesCompletas, function($sucursal) use ($empId) {
+        return isset($sucursal['empresa']['id']) && 
+               $sucursal['empresa']['id'] == $empId;
+    });
+    
+    // Establecer la primera sucursal como predeterminada
+    if (!empty($sucursalesEmpresa)) {
+        $_SESSION['sucursal_seleccionada'] = reset($sucursalesEmpresa)['id'];
+    }
+}
+
+// --- Manejar cambio de sucursal ---
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'cambiar_sucursal') {
+    $_SESSION['sucursal_seleccionada'] = intval($_POST['sucursal_id']);
+    header('Location: caja.php');
+    exit;
+}
+
+$sucursalSeleccionada = $_SESSION['sucursal_seleccionada'] ?? null;
+
 // --- Llamada al endpoint para obtener todas las cajas ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
@@ -45,8 +89,17 @@ $cajasEmpresa = array_filter($cajasCompletas, function($caja) use ($empId) {
            $caja['sucursalId']['empresa']['id'] == $empId;
 });
 
-// --- Buscar la última caja abierta del usuario actual ---
-$cajasAbiertas = array_filter($cajasEmpresa, fn($c) => $c['estado'] == 1 && $c['usuarioId']['id'] == $userId);
+// --- Filtrado adicional por sucursal seleccionada ---
+$cajasSucursal = $cajasEmpresa;
+if ($sucursalSeleccionada) {
+    $cajasSucursal = array_filter($cajasEmpresa, function($caja) use ($sucursalSeleccionada) {
+        return isset($caja['sucursalId']['id']) && 
+               $caja['sucursalId']['id'] == $sucursalSeleccionada;
+    });
+}
+
+// --- Buscar la última caja abierta del usuario actual en la sucursal seleccionada ---
+$cajasAbiertas = array_filter($cajasSucursal, fn($c) => $c['estado'] == 1 && $c['usuarioId']['id'] == $userId);
 $ultimaCajaAbierta = null;
 if (!empty($cajasAbiertas)) {
     usort($cajasAbiertas, fn($a, $b) => $b['id'] - $a['id']);
@@ -135,50 +188,78 @@ $movimientosEmpresa = array_filter($movimientosCompletos, function($movimiento) 
            date('Y-m-d') === date('Y-m-d', strtotime($movimiento['fecha']));
 });
 
+// --- Filtrado adicional de movimientos por sucursal seleccionada ---
+$movimientosSucursal = $movimientosEmpresa;
+if ($sucursalSeleccionada) {
+    $movimientosSucursal = array_filter($movimientosEmpresa, function($movimiento) use ($sucursalSeleccionada) {
+        return isset($movimiento['caja']['sucursalId']['id']) && 
+               $movimiento['caja']['sucursalId']['id'] == $sucursalSeleccionada;
+    });
+}
+
 // --- Lógica de apertura de caja POST ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'abrir_caja') {
     if ($ultimaCajaAbierta) {
-        $errorMsg = 'Ya tienes una caja abierta. Debes cerrarla antes de abrir una nueva.';
+        $errorMsg = 'Ya tienes una caja abierta en esta sucursal. Debes cerrarla antes de abrir una nueva.';
     } else if ($_POST['monto_inicial'] < 0) {
         $errorMsg = 'El monto inicial no puede ser negativo.';
+    } else if (!$sucursalSeleccionada) {
+        $errorMsg = 'Debe seleccionar una sucursal antes de abrir una caja.';
     } else {
-        // Obtener la sucursal del usuario actual
-        $sucursalUsuario = null;
-        foreach ($sucursalesEmpresa as $sucursal) {
-            if ($sucursal['responsable'] == $user['nombre']) {
-                $sucursalUsuario = $sucursal;
-                break;
+        // Crear el payload
+        $payload = [
+            "sucursalId" => $sucursalSeleccionada,
+            "usuarioId" => $userId,
+            "apertura" => date('Y-m-d\TH:i:s'),
+            "cierre" => null,
+            "montoInicial" => floatval($_POST['monto_inicial']),
+            "montoFinal" => null,
+            "estado" => 1
+        ];
+        
+        // Debug: Mostrar el payload que se va a enviar
+        error_log("Payload a enviar: " . json_encode($payload));
+        
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/caja',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
+            ),
+        ));
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($curl);
+        curl_close($curl);
+        
+        // Debug: Mostrar respuesta de la API
+        error_log("Respuesta API caja: " . $response);
+        error_log("HTTP Code: " . $httpCode);
+        error_log("CURL Error: " . $curlError);
+        
+        if ($httpCode >= 200 && $httpCode < 300) {
+            // Obtener nombre de la sucursal para la auditoría
+            $nombreSucursal = '';
+            foreach ($sucursalesEmpresa as $sucursal) {
+                if ($sucursal['id'] == $sucursalSeleccionada) {
+                    $nombreSucursal = $sucursal['nombre'];
+                    break;
+                }
             }
-        }
-        
-        // Si no encuentra sucursal por responsable, usar la primera sucursal de la empresa
-        if (!$sucursalUsuario && !empty($sucursalesEmpresa)) {
-            $sucursalUsuario = reset($sucursalesEmpresa);
-        }
-        
-        if (!$sucursalUsuario) {
-            $errorMsg = 'No se encontró una sucursal válida para abrir la caja.';
-        } else {
-            // Debug: Mostrar información de la sucursal seleccionada
-            error_log("Sucursal seleccionada: " . json_encode($sucursalUsuario));
             
-            // Crear el payload
-            $payload = [
-                "sucursalId" => $sucursalUsuario['id'],
-                "usuarioId" => $userId,
-                "apertura" => date('Y-m-d\TH:i:s'),
-                "cierre" => null,
-                "montoInicial" => floatval($_POST['monto_inicial']),
-                "montoFinal" => null,
-                "estado" => 1
-            ];
-            
-            // Debug: Mostrar el payload que se va a enviar
-            error_log("Payload a enviar: " . json_encode($payload));
-            
+            // Auditoría
             $curl = curl_init();
             curl_setopt_array($curl, array(
-                CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/caja',
+                CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/auditoria',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => '',
                 CURLOPT_MAXREDIRS => 10,
@@ -186,55 +267,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => json_encode($payload),
+                CURLOPT_POSTFIELDS => '{
+                    "usuario": {"id":'.$userId.'},
+                    "empresa": {"id":'.$empId.'},
+                    "evento": "APERTURA DE CAJA",
+                    "descripcion": "Se abrió caja en sucursal '.$nombreSucursal.' con monto inicial: S/ '.$_POST['monto_inicial'].'",
+                    "fecha": "'.date('Y-m-d\TH:i:s').'",
+                    "estado": 1
+                }',
                 CURLOPT_HTTPHEADER => array(
                     'Content-Type: application/json',
                     'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
                 ),
             ));
-            $response = curl_exec($curl);
-            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($curl);
+            curl_exec($curl);
             curl_close($curl);
-            
-            // Debug: Mostrar respuesta de la API
-            error_log("Respuesta API caja: " . $response);
-            error_log("HTTP Code: " . $httpCode);
-            error_log("CURL Error: " . $curlError);
-            
-            if ($httpCode >= 200 && $httpCode < 300) {
-                // Auditoría
-                $curl = curl_init();
-                curl_setopt_array($curl, array(
-                    CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/auditoria',
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_ENCODING => '',
-                    CURLOPT_MAXREDIRS => 10,
-                    CURLOPT_TIMEOUT => 0,
-                    CURLOPT_FOLLOWLOCATION => true,
-                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                    CURLOPT_CUSTOMREQUEST => 'POST',
-                    CURLOPT_POSTFIELDS => '{
-                        "usuario": {"id":'.$userId.'},
-                        "empresa": {"id":'.$empId.'},
-                        "evento": "APERTURA DE CAJA",
-                        "descripcion": "Se abrió caja en sucursal '.$sucursalUsuario['nombre'].' con monto inicial: S/ '.$_POST['monto_inicial'].'",
-                        "fecha": "'.date('Y-m-d\TH:i:s').'",
-                        "estado": 1
-                    }',
-                    CURLOPT_HTTPHEADER => array(
-                        'Content-Type: application/json',
-                        'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
-                    ),
-                ));
-                curl_exec($curl);
-                curl_close($curl);
-                $successMsg = 'Caja abierta correctamente en sucursal '.$sucursalUsuario['nombre'].'.';
-                header('Location: caja.php?success=1');
-                exit;
-            } else {
-                $errorMsg = 'Error al crear la caja. Código HTTP: ' . $httpCode . '. Respuesta: ' . $response;
-            }
+            $successMsg = 'Caja abierta correctamente en sucursal '.$nombreSucursal.'.';
+            header('Location: caja.php?success=1');
+            exit;
+        } else {
+            $errorMsg = 'Error al crear la caja. Código HTTP: ' . $httpCode . '. Respuesta: ' . $response;
         }
     }
 }
@@ -402,15 +454,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id']) && !isset($_POST
 }
 
 // --- Cálculo de estadísticas ---
-$total_cajas = count($cajasEmpresa);
-$cajas_abiertas = count(array_filter($cajasEmpresa, fn($c) => $c['estado'] == 1));
-$cajas_hoy = count(array_filter($cajasEmpresa, fn($c) => date('Y-m-d') === date('Y-m-d', strtotime($c['apertura']))));
+$total_cajas = count($cajasSucursal);
+$cajas_abiertas = count(array_filter($cajasSucursal, fn($c) => $c['estado'] == 1));
+$cajas_hoy = count(array_filter($cajasSucursal, fn($c) => date('Y-m-d') === date('Y-m-d', strtotime($c['apertura']))));
 
 // Calcular total neto de movimientos (ingresos - egresos)
 $total_ingresos = 0;
 $total_egresos = 0;
 
-foreach ($movimientosEmpresa as $movimiento) {
+foreach ($movimientosSucursal as $movimiento) {
     if ($movimiento['monto'] > 0) {
         $total_ingresos += $movimiento['monto'];
     } else {
@@ -419,6 +471,17 @@ foreach ($movimientosEmpresa as $movimiento) {
 }
 
 $total_movimientos = $total_ingresos - $total_egresos; // Total neto
+
+// --- Obtener nombre de la sucursal seleccionada ---
+$nombreSucursalSeleccionada = '';
+if ($sucursalSeleccionada) {
+    foreach ($sucursalesEmpresa as $sucursal) {
+        if ($sucursal['id'] == $sucursalSeleccionada) {
+            $nombreSucursalSeleccionada = $sucursal['nombre'];
+            break;
+        }
+    }
+}
 
 ?>
 <!DOCTYPE html>
@@ -485,6 +548,35 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
         </div>
       </div>
 
+      <!-- Selector de Sucursal -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h6 class="mb-0 text-success-emphasis">
+                <i class="bi bi-building me-2"></i>Sucursal Actual
+              </h6>
+              <p class="text-muted mb-0 small">
+                <?= $nombreSucursalSeleccionada ? $nombreSucursalSeleccionada : 'Seleccione una sucursal' ?>
+              </p>
+            </div>
+            <div class="col-md-6">
+              <form method="post" class="d-flex gap-2">
+                <input type="hidden" name="action" value="cambiar_sucursal">
+                <select name="sucursal_id" class="form-select" onchange="this.form.submit()">
+                  <option value="">Seleccionar Sucursal</option>
+                  <?php foreach ($sucursalesEmpresa as $sucursal): ?>
+                    <option value="<?= $sucursal['id'] ?>" <?= $sucursalSeleccionada == $sucursal['id'] ? 'selected' : '' ?>>
+                      <?= htmlspecialchars($sucursal['nombre'], ENT_QUOTES) ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <?php if ($errorMsg): ?>
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
           <?= $errorMsg ?>
@@ -520,6 +612,9 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
               <i class="bi bi-cash-stack text-success fs-1"></i>
               <h4 class="mt-2 fw-bold"><?= number_format($total_cajas) ?></h4>
               <p class="text-muted mb-0">Total de Cajas</p>
+              <?php if ($nombreSucursalSeleccionada): ?>
+                <small class="text-muted"><?= $nombreSucursalSeleccionada ?></small>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -529,6 +624,9 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
               <i class="bi bi-unlock-fill text-warning fs-1"></i>
               <h4 class="mt-2 fw-bold"><?= number_format($cajas_abiertas) ?></h4>
               <p class="text-muted mb-0">Cajas Abiertas</p>
+              <?php if ($nombreSucursalSeleccionada): ?>
+                <small class="text-muted"><?= $nombreSucursalSeleccionada ?></small>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -538,6 +636,9 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
               <i class="bi bi-calendar-check text-info fs-1"></i>
               <h4 class="mt-2 fw-bold"><?= number_format($cajas_hoy) ?></h4>
               <p class="text-muted mb-0">Cajas Hoy</p>
+              <?php if ($nombreSucursalSeleccionada): ?>
+                <small class="text-muted"><?= $nombreSucursalSeleccionada ?></small>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -549,6 +650,9 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
                 S/ <?= number_format($total_movimientos, 2) ?>
               </h4>
               <p class="text-muted mb-0">Total Neto Hoy</p>
+              <?php if ($nombreSucursalSeleccionada): ?>
+                <small class="text-muted"><?= $nombreSucursalSeleccionada ?></small>
+              <?php endif; ?>
             </div>
           </div>
         </div>
@@ -557,7 +661,12 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
       <!-- Tabla de Cajas -->
       <div class="card shadow-sm">
         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 text-success-emphasis">Historial de Cajas</h5>
+          <h5 class="mb-0 text-success-emphasis">
+            Historial de Cajas
+            <?php if ($nombreSucursalSeleccionada): ?>
+              <small class="text-muted">- <?= $nombreSucursalSeleccionada ?></small>
+            <?php endif; ?>
+          </h5>
           <div class="col-md-4">
             <input type="text" id="searchInput" class="form-control" placeholder="Buscar por usuario o fecha...">
           </div>
@@ -569,6 +678,7 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
                 <tr class="text-center">
                   <th>#</th>
                   <th class="text-start">Usuario</th>
+                  <th>Sucursal</th>
                   <th>Monto Inicial</th>
                   <th>Monto Final</th>
                   <th>Apertura</th>
@@ -680,7 +790,7 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Pasamos los datos de PHP a JavaScript de forma segura
-    const cajasData = <?php echo json_encode(array_values($cajasEmpresa)); ?>;
+    const cajasData = <?php echo json_encode(array_values($cajasSucursal)); ?>;
     const usuariosData = <?php echo json_encode(array_values($usuariosEmpresa)); ?>;
     const viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));
@@ -703,7 +813,7 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
       if (paginatedData.length === 0) {
         tableBody.innerHTML = `
           <tr>
-            <td colspan="8" class="text-center text-muted py-4">
+            <td colspan="9" class="text-center text-muted py-4">
               <i class="bi bi-search fs-2"></i>
               <p class="mt-2 mb-0">No se encontraron resultados.</p>
             </td>
@@ -721,6 +831,9 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
           <tr>
             <td class="text-center fw-bold">${globalIndex}</td>
             <td>${row.usuarioId.nombre}</td>
+            <td class="text-center">
+              <span class="badge bg-info-subtle text-info-emphasis">${row.sucursalId.nombre}</span>
+            </td>
             <td class="text-center">
               <span class="badge bg-primary-subtle text-primary-emphasis">S/ ${parseFloat(row.montoInicial).toFixed(2)}</span>
             </td>
@@ -775,6 +888,7 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
       const searchTerm = searchInput.value.toLowerCase();
       filteredData = cajasData.filter(row => {
         return row.usuarioId.nombre.toLowerCase().includes(searchTerm) ||
+               row.sucursalId.nombre.toLowerCase().includes(searchTerm) ||
                new Date(row.apertura).toLocaleDateString().includes(searchTerm);
       });
       currentPage = 1;
@@ -807,6 +921,7 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
         <div class="alert alert-info">
           <i class="bi bi-info-circle me-2"></i>
           <strong>Caja ID:</strong> ${record.id}<br>
+          <strong>Sucursal:</strong> ${record.sucursalId.nombre}<br>
           <strong>Abierta por:</strong> ${record.usuarioId.nombre}<br>
           <strong>Monto inicial:</strong> S/ ${parseFloat(record.montoInicial).toFixed(2)}
         </div>
@@ -884,6 +999,7 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
             <ul class="list-group list-group-flush">
               <li class="list-group-item"><strong>ID:</strong> ${record.id}</li>
               <li class="list-group-item"><strong>Usuario:</strong> ${record.usuarioId.nombre}</li>
+              <li class="list-group-item"><strong>Sucursal:</strong> ${record.sucursalId.nombre}</li>
               <li class="list-group-item"><strong>Estado:</strong> ${record.estado == 1 ? '<span class="badge bg-success">Abierta</span>' : '<span class="badge bg-secondary">Cerrada</span>'}</li>
               <li class="list-group-item"><strong>Monto Inicial:</strong> S/ ${parseFloat(record.montoInicial).toFixed(2)}</li>
               <li class="list-group-item"><strong>Monto Final:</strong> ${record.montoFinal ? 'S/ ' + parseFloat(record.montoFinal).toFixed(2) : 'No cerrada'}</li>
@@ -933,18 +1049,20 @@ $total_movimientos = $total_ingresos - $total_egresos; // Total neto
     
     function exportToExcel() {
       const headers = [
-        "ID", "Usuario", "Monto Inicial", "Monto Final", "Apertura", "Cierre", "Estado"
+        "ID", "Usuario", "Sucursal", "Monto Inicial", "Monto Final", "Apertura", "Cierre", "Estado"
       ];
 
       let csvContent = "data:text/csv;charset=utf-8,\uFEFF" + headers.join(",") + "\n";
 
       cajasData.forEach(record => {
         const usuarioLimpio = `"${record.usuarioId.nombre}"`;
+        const sucursalLimpia = `"${record.sucursalId.nombre}"`;
         const estado = record.estado == 1 ? "Abierta" : "Cerrada";
         
         const row = [
           record.id,
           usuarioLimpio,
+          sucursalLimpia,
           parseFloat(record.montoInicial).toFixed(2),
           record.montoFinal ? parseFloat(record.montoFinal).toFixed(2) : "",
           new Date(record.apertura).toLocaleString(),

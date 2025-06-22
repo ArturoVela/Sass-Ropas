@@ -39,9 +39,40 @@ function fetchUsuarios(): array
   return json_decode($raw, true) ?: [];
 }
 
+// --- Obtener sucursal seleccionada de la sesión o usar la primera por defecto ---
+if (!isset($_SESSION['sucursal_seleccionada'])) {
+    $sucursalesCompletas = fetchSucursales();
+    $sucursalesEmpresa = array_filter($sucursalesCompletas, fn($s) => $s['empresa']['id'] === $empId);
+    
+    // Establecer la primera sucursal como predeterminada
+    if (!empty($sucursalesEmpresa)) {
+        $_SESSION['sucursal_seleccionada'] = reset($sucursalesEmpresa)['id'];
+    }
+}
+
+// --- Manejar cambio de sucursal ---
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] == 'cambiar_sucursal') {
+    $_SESSION['sucursal_seleccionada'] = intval($_POST['sucursal_id']);
+    header('Location: dashboard.php');
+    exit;
+}
+
+$sucursalSeleccionada = $_SESSION['sucursal_seleccionada'] ?? null;
+
 // Filtrar sólo los de esta empresa
 $sucursales = array_filter(fetchSucursales(), fn($s) => $s['empresa']['id'] === $empId);
 $empleados  = array_filter(fetchUsuarios(),   fn($u) => isset($u['empresa']['id']) && $u['empresa']['id'] === $empId);
+
+// --- Obtener nombre de la sucursal seleccionada ---
+$nombreSucursalSeleccionada = '';
+if ($sucursalSeleccionada) {
+    foreach ($sucursales as $sucursal) {
+        if ($sucursal['id'] == $sucursalSeleccionada) {
+            $nombreSucursalSeleccionada = $sucursal['nombre'];
+            break;
+        }
+    }
+}
 
 // Conteos
 $sucCount = count($sucursales);
@@ -159,6 +190,40 @@ $current = basename($_SERVER['SCRIPT_NAME']);
           <p class="text-muted">Aquí tienes un resumen de tu empresa y las estadísticas principales.</p>
         </div>
       </div>
+
+      <!-- Selector de Sucursal -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <div class="row align-items-center">
+                <div class="col-md-6">
+                  <h6 class="mb-0 text-danger">
+                    <i class="bi bi-building me-2"></i>Sucursal Actual
+                  </h6>
+                  <p class="text-muted mb-0 small">
+                    <?= $nombreSucursalSeleccionada ? $nombreSucursalSeleccionada : 'Seleccione una sucursal' ?>
+                  </p>
+                </div>
+                <div class="col-md-6">
+                  <form method="post" class="d-flex gap-2">
+                    <input type="hidden" name="action" value="cambiar_sucursal">
+                    <select name="sucursal_id" class="form-select" onchange="this.form.submit()">
+                      <option value="">Seleccionar Sucursal</option>
+                      <?php foreach ($sucursales as $sucursal): ?>
+                        <option value="<?= $sucursal['id'] ?>" <?= $sucursalSeleccionada == $sucursal['id'] ? 'selected' : '' ?>>
+                          <?= htmlspecialchars($sucursal['nombre'], ENT_QUOTES) ?>
+                        </option>
+                      <?php endforeach; ?>
+                    </select>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="row mb-4">
         <div class="col-lg-3 col-md-6 mb-3"><div class="metric-card card h-100"><div class="card-body text-center"><h5 class="card-title text-danger">Sucursales</h5><p class="display-4 text-danger"><?= $sucCount ?></p></div></div></div>
         <div class="col-lg-3 col-md-6 mb-3"><div class="metric-card card h-100"><div class="card-body text-center"><h5 class="card-title text-danger">Empleados</h5><p class="display-4 text-danger"><?= $empCount ?></p></div></div></div>
