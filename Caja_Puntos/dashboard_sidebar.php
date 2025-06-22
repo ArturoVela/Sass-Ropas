@@ -88,12 +88,6 @@ if (isset($_SESSION['sucursal_seleccionada'])) {
       <a href="dashboard.php" class="btn <?= $current==='dashboard.php' ? 'btn-light text-danger' : 'btn-outline-light' ?>">
         <i class="bi bi-house-fill me-2"></i>Inicio
       </a>
-      <a href="sucursales.php" class="btn <?= $current==='sucursales.php' ? 'btn-light text-danger' : 'btn-outline-light' ?>">
-        <i class="bi bi-geo-alt-fill me-2"></i>Sucursales
-      </a>
-      <a href="auditoria.php" class="btn <?= $current==='auditoria.php' ? 'btn-light text-danger' : 'btn-outline-light' ?>">
-        <i class="bi bi-journal-text me-2"></i>Auditoría
-      </a>
 
       <div class="d-flex align-items-center justify-content-center my-4">
   <div style="flex: 1; height: 2px; background: white; max-width: 200px;"></div>

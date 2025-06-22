@@ -6,8 +6,8 @@ if (!isset($_SESSION['user']) || !isset($_GET['id'])) {
 }
 
 // Guardar el ID de la sucursal en la sesión para usarlo en la página de detalle
-$_SESSION['sucursal_id'] = (int)$_GET['id'];
+$_SESSION['sucursal_seleccionada'] = (int)$_GET['id'];
 
 // Redirigir a la página de detalle de la sucursal
-header('Location: sucursal.php');
+header('Location: Caja_Puntos/dashboard.php');
 exit; 

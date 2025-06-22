@@ -62,7 +62,7 @@ usort($auditorias, fn($a, $b) => $b['id'] <=> $a['id']);
     .suc-card { background: var(--card-bg); border: 2px solid var(--primary); border-radius: 1rem; transition: transform .2s, box-shadow .2s; cursor: pointer; }
     .suc-card:hover { transform: translateY(-4px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.1); }
     .suc-card-title { color: var(--primary); }
-    .suc-card .btn { cursor: initial; }
+    .suc-card .btn { cursor: pointer; }
 
     .table-responsive { border: 2px solid var(--primary); border-radius: 2rem 0.5rem; overflow: hidden; box-shadow: 0 .5rem 1rem rgba(0,0,0,.1); }
     .audit-table { border-collapse: separate; border-spacing: 0; }
