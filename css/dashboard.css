@@ -1,0 +1,94 @@
+/* dashboard.css */
+
+/* 0) Variables de color */
+:root {
+  --wine-bg:       #6f0f16;   /* Rojo oscuro */
+  --wine-accent:   #b22222;   /* Rojo intenso */
+  --wine-light:    #c04040;   /* Rojo más claro */
+  --wine-text:     #f8f9fa;   /* Casi blanco */
+  --content-bg:    #f7f4f6;   /* Fondo suave rosado */
+}
+
+/* 1) Global */
+body {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  background: var(--content-bg);
+}
+
+/* 2) Sidebar / Offcanvas */
+.sidebar {
+  background-color: var(--wine-bg);
+  color: var(--wine-text);
+}
+@media (min-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0; bottom: 0;
+    width: 250px;
+    padding: 1.5rem 1rem;
+  }
+  .content {
+    margin-left: 250px;
+  }
+}
+/* Quitar padding extra en móvil */
+.offcanvas-md .offcanvas-body {
+  padding: 0;
+}
+
+/* 3) Enlaces del menú */
+.nav-link {
+  color: var(--wine-text);
+  padding: .75rem 1rem;
+  transition: background-color .2s;
+}
+.nav-link:hover,
+.nav-link.active {
+  background-color: rgba(255,255,255,0.2);
+  color: var(--wine-text);
+}
+
+/* 4) Botón Cerrar sesión */
+.btn-outline-light {
+  border-color: var(--wine-text);
+  color: var(--wine-text);
+  border-radius: .5rem;
+}
+.btn-outline-light:hover {
+  background-color: var(--wine-light);
+  border-color: var(--wine-light);
+  color: var(--wine-text);
+}
+
+/* 5) Contenido principal */
+.content {
+  min-height: 100vh;
+}
+@media (max-width: 767.98px) {
+  .content {
+    margin: 0;
+  }
+}
+
+/* 6) Encabezados */
+.content h1 {
+  color: var(--wine-bg);
+  margin-bottom: 1rem;
+}
+.content p.lead {
+  color: var(--wine-accent);
+}
+
+/* 7) Navbar móvil (toggler) */
+.navbar-light .btn-primary {
+  background-color: var(--wine-accent);
+  border: none;
+}
+.navbar-light .btn-primary:hover {
+  background-color: var(--wine-light);
+}
+.navbar-brand {
+  color: var(--wine-bg);
+  font-weight: 600;
+}

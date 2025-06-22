@@ -1,0 +1,172 @@
+/* Reset mínimo */
+* { box-sizing: border-box; margin:0; padding:0; }
+html {
+  height: 100%;
+  /* Ya no ocultamos overflow aquí */
+  font-family: 'Montserrat', sans-serif;
+}
+body {
+  height: 100%;
+  overflow: hidden;             /* solo al body #ff0000,#ff7f00,#ffff00,#00ff00,#0000ff,#4b0082,#8b00ff */
+  background: linear-gradient(90deg,#ff0000,#ff7f00,#ffff00,#00ff00,#0000ff,#4b0082,#8b00ff);
+  background-size:400% 400%;
+  animation: gradientCycle 20s linear infinite;
+}
+@keyframes gradientCycle {
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+
+/* scroll cuando clase zoom-scroll */
+html.zoom-scroll,
+body.zoom-scroll {
+  overflow-y: auto !important;
+}
+
+/* baja el form y limita altura para que scroll se note */
+html.zoom-scroll .container,
+body.zoom-scroll .container {
+  align-items: flex-start !important;
+  padding-top: 15vh !important;
+  max-height: 100vh;
+}
+
+/* 2) Contenedor de emojis */
+#emojiRain {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: -1;
+}
+
+@keyframes emojiFall {
+    0% {
+        transform: translateY(-10%);
+    }
+
+    100% {
+        transform: translateY(110%);
+    }
+}
+
+.rain-emoji {
+    position: absolute;
+    top: 0;
+    animation-name: emojiFall;
+    animation-timing-function: linear;
+    animation-iteration-count: 1;
+    opacity: .8;
+}
+
+/* 3) Canvas de partículas (si lo usas) */
+#tsparticles {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+}
+
+/* 4) Centrado del form */
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 1rem;
+}
+
+/* 5) Tarjeta */
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    border-top: 4px solid #dc3545;
+    border-radius: .75rem;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.login-card .card-body {
+    padding: 2rem;
+}
+
+/* 6) Inputs */
+.form-control {
+    border-radius: .5rem;
+    transition: border-color .2s, box-shadow .2s;
+}
+
+.form-control:focus {
+    border-color: #dc3545;
+    box-shadow: none;
+}
+
+/* 7) Botón */
+.btn-danger {
+    border-radius: .5rem;
+    font-weight: 600;
+}
+
+.btn-danger:hover {
+    background-color: #b02a37;
+    border-color: #b02a37;
+}
+
+/* 8) Alertas */
+.alert-danger {
+    border-radius: .5rem;
+}
+
+/* ==================== */
+/* 9) Media queries */
+/* ==================== */
+@media (max-width: 576px) {
+
+    /* Login-card casi full */
+    .login-card {
+        max-width: 90%;
+        border-radius: 1rem;
+    }
+
+    /* Emojis más pequeños */
+    .rain-emoji {
+        font-size: 1rem;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+    .login-card {
+        max-width: 350px;
+    }
+
+    .rain-emoji {
+        font-size: 1.2rem;
+    }
+}
+
+/* Siempre permitimos scroll vertical cuando haga falta */
+body.zoom-scroll {
+    overflow-y: auto;
+}
+
+/* Limitamos la altura del contenedor al 100 vh para que scroll se active */
+body.zoom-scroll .container {
+    max-height: 100vh;
+}
+
+/* Cuando el zoom sea muy alto, baja el login-card */
+body.zoom-scroll .container {
+    /* Empuja el contenido hacia abajo */
+    align-items: flex-start !important;
+    padding-top: 15vh !important;
+}
+
+/* Ya tenías esto para overflow si quieres: */
+body.zoom-scroll {
+    overflow-y: auto;
+}
