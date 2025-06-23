@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // Actualizar datos de la recompensa
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/recompensas',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/recompensas',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // --- Registrar en Auditoría ---
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/auditoria',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // Crear nueva recompensa
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/recompensas',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/recompensas',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // --- Registrar en Auditoría ---
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/auditoria',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
 // --- Llamada al endpoint para obtener todas las recompensas ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/recompensas',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/recompensas',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -202,6 +202,7 @@ if (!empty($recompensas)) {
 <body class="bg-light">
 
   <?php include 'dashboard_sidebar.php'; ?>
+  <?php include 'header_sidebar.php'; ?>
 
   <!-- Vista normal de la lista -->
   <div class="d-flex">

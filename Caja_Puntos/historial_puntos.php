@@ -18,7 +18,7 @@ require_once 'config_colors.php';
 // --- Llamada al endpoint para obtener el historial ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/historialpuntos',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/historialpuntos',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -91,6 +91,7 @@ $puntos_canjeados = array_sum(array_column(array_filter($historialEmpresa, fn($h
 <body class="bg-light">
 
   <?php include 'dashboard_sidebar.php'; ?>
+  <?php include 'header_sidebar.php'; ?>
 
 <div class="d-flex">
   <main class="content flex-grow-1 p-4">

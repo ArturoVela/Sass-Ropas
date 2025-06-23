@@ -30,7 +30,7 @@ $sucursalSeleccionada = $_SESSION['sucursal_seleccionada'] ?? null;
 // --- Llamada al endpoint de sucursales para obtener el nombre ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/sucursales',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/sucursales',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -68,7 +68,7 @@ if ($sucursalSeleccionada) {
 // --- Llamada al endpoint de movimientos de caja ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/movimientosCaja',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/movimientosCaja',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -173,6 +173,7 @@ require_once 'config_colors.php';
 <body class="bg-light">
 
   <?php include 'dashboard_sidebar.php'; ?>
+  <?php include 'header_sidebar.php'; ?>
 
   <div class="d-flex">
     <main class="content flex-grow-1 p-4">

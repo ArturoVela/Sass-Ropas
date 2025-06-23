@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // Actualizar datos del canje
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/canjes',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/canjes',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // --- Registrar en Auditoría ---
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/auditoria',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // Crear nuevo canje
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/canjes',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/canjes',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // --- Registrar en Auditoría ---
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/auditoria',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -129,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
 // --- Llamada al endpoint para obtener todos los canjes ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/canjes',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/canjes',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -154,7 +154,7 @@ $canjesEmpresa = array_filter($canjesCompletos, fn($c) => isset($c['cliente_id']
 // --- Llamada al endpoint de clientes para el formulario ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/puntosclientes',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/puntosclientes',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -176,7 +176,7 @@ $clientesEmpresa = array_filter($clientesCompletos, fn($c) => isset($c['clienteI
 // --- Llamada al endpoint de recompensas para el formulario ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/recompensas',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/recompensas',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -249,6 +249,7 @@ if (!empty($canjesEmpresa)) {
 <body class="bg-light">
 
   <?php include 'dashboard_sidebar.php'; ?>
+  <?php include 'header_sidebar.php'; ?>
 
   <div class="d-flex">
     <main class="content flex-grow-1 p-4">

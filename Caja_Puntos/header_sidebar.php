@@ -148,6 +148,21 @@ $pageTitle = $page_titles[$current_page_script] ?? 'Módulo';
         background: var(--border-color);
         margin: 0.5rem 0;
     }
+
+    /* Layout adjustment for the main content area to avoid overlap with fixed header/sidebar */
+    main.content {
+        margin-top: var(--header-height);
+        margin-left: var(--sidebar-width);
+        width: calc(100% - var(--sidebar-width));
+        transition: margin-left 0.3s ease, width 0.3s ease;
+    }
+
+    @media (max-width: 767.98px) {
+        main.content {
+            margin-left: 0;
+            width: 100%;
+        }
+    }
 </style>
 
 <header class="main-header">

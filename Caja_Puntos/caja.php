@@ -22,7 +22,7 @@ if (!isset($_SESSION['sucursal_seleccionada'])) {
     // Obtener sucursales para establecer la primera como predeterminada
     $curl = curl_init();
     curl_setopt_array($curl, array(
-      CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/sucursales',
+      CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/sucursales',
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_ENCODING => '',
       CURLOPT_MAXREDIRS => 10,
@@ -64,7 +64,7 @@ $sucursalSeleccionada = $_SESSION['sucursal_seleccionada'] ?? null;
 // --- Llamada al endpoint para obtener todas las cajas ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/caja',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/caja',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -109,7 +109,7 @@ if (!empty($cajasAbiertas)) {
 // --- Llamada al endpoint de usuarios para el formulario ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/usuarios',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/usuarios',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -136,7 +136,7 @@ $usuariosEmpresa = array_filter($usuariosCompletos, function($usuario) use ($emp
 // --- Llamada al endpoint de sucursales para el formulario ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/sucursales',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/sucursales',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -163,7 +163,7 @@ $sucursalesEmpresa = array_filter($sucursalesCompletas, function($sucursal) use 
 // --- Llamada al endpoint de movimientos de caja ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/movimientosCaja',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/movimientosCaja',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -222,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
         
         $curl = curl_init();
         curl_setopt_array($curl, array(
-            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/caja',
+            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/caja',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -259,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             // Auditoría
             $curl = curl_init();
             curl_setopt_array($curl, array(
-                CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/auditoria',
+                CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => '',
                 CURLOPT_MAXREDIRS => 10,
@@ -315,7 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
         
         $curl = curl_init();
         curl_setopt_array($curl, array(
-            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/caja',
+            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/caja',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -343,7 +343,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
             // Auditoría
             $curl = curl_init();
             curl_setopt_array($curl, array(
-                CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/auditoria',
+                CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => '',
                 CURLOPT_MAXREDIRS => 10,
@@ -394,7 +394,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id']) && !isset($_POST
     
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/caja',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/caja',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -422,7 +422,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id']) && !isset($_POST
         // --- Registrar en Auditoría ---
         $curl = curl_init();
         curl_setopt_array($curl, array(
-            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1688/api/ropas/auditoria',
+            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -528,6 +528,7 @@ require_once 'config_colors.php';
 <body class="bg-light">
 
   <?php include 'dashboard_sidebar.php'; ?>
+  <?php include 'header_sidebar.php'; ?>
 
   <div class="d-flex">
     <main class="content flex-grow-1 p-4">
