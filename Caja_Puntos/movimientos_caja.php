@@ -1,5 +1,10 @@
 <?php
 session_start();
+$rolUsuario = isset($_SESSION['user']['rol']) ? strtoupper($_SESSION['user']['rol']) : '';
+if ($rolUsuario === 'VENDEDOR') {
+    header('Location: ../index.php');
+    exit;
+}
 if (!isset($_SESSION['user'])) {
   header('Location: index.php');
   exit;

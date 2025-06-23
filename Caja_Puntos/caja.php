@@ -1,5 +1,10 @@
 <?php
 session_start();
+$rolUsuario = isset($_SESSION['user']['rol']) ? strtoupper($_SESSION['user']['rol']) : '';
+if ($rolUsuario === 'VENDEDOR') {
+    header('Location: ../index.php');
+    exit;
+}
 if (!isset($_SESSION['user'])) {
   header('Location: index.php');
   exit;
@@ -12,9 +17,6 @@ $user = $_SESSION['user'];
 $empId = $user['empresa']['id'];
 $userId = $user['id'];
 $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
-
-// Obtener el rol del usuario
-$rolUsuario = isset($_SESSION['user']['rol']) ? strtoupper($_SESSION['user']['rol']) : '';
 
 // --- Variables para mensajes de error ---
 $errorMsg = '';
