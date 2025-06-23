@@ -1,7 +1,6 @@
 <?php
 require_once 'config_colors.php';
 
-session_start();
 if (!isset($_SESSION['user'])) {
   header('Location: index.php');
   exit;
@@ -168,32 +167,8 @@ $current = basename($_SERVER['SCRIPT_NAME']);
 <body class="bg-light">
 
   <?php include 'dashboard_sidebar.php'; ?>
-
-  <header class="main-header">
-    <div class="header-content">
-      <h1 class="page-title">Dashboard</h1>
-      <div class="user-menu">
-        <button class="user-menu-toggle" onclick="toggleUserMenu()">
-          <div class="user-avatar"><?= strtoupper(substr($user['nombre'], 0, 1)) ?></div>
-          <div class="user-info">
-            <p class="user-name mb-0"><?= htmlspecialchars($user['nombre']) ?></p>
-            <p class="user-role mb-0"><?= htmlspecialchars($user['rol']) ?></p>
-          </div>
-          <i class="fas fa-chevron-down"></i>
-        </button>
-        <div class="user-menu-dropdown" id="userMenuDropdown">
-          <div class="dropdown-header">
-            <h6><?= htmlspecialchars($user['nombre']) ?></h6>
-            <p class="text-muted mb-0"><?= htmlspecialchars($empName) ?></p>
-          </div>
-          <a href="configuracion.php" class="dropdown-item"><i class="fas fa-cog"></i><span>Configuración</span></a>
-          <a href="#" class="dropdown-item"><i class="fas fa-question-circle"></i><span>Ayuda</span></a>
-          <div class="dropdown-divider"></div>
-          <a href="logout.php" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></a>
-        </div>
-      </div>
-    </div>
-  </header>
+ 
+  
 
   <main class="main-content">
     <div class="container-fluid">

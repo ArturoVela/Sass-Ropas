@@ -7,20 +7,21 @@ $empId   = $user['empresa']['id'] ?? 1; // Default to ID 1 if not set
 
 // --- Color map based on empresa ID ---
 $colorMap = [
-    1 => '#FF5733',  // Rojo
-    2 => '#FFA500',  // Naranja
-    3 => '#FFD700',  // Amarillo
-    4 => '#32CD32',  // Verde lima
-    5 => '#228B22',  // Verde
-    6 => '#00CED1',  // Cian
-    7 => '#1E90FF',  // Azul claro
-    8 => '#4169E1',  // Azul
-    9 => '#8A2BE2',  // Violeta
-    10 => '#FF69B4', // Rosa
-    11 => '#FF00FF', // Magenta
-    12 => '#8B4513', // Marrón
-    13 => '#708090', // Gris
+  1 => '#A93226',  // Rojo vino
+  2 => '#D35400',  // Naranja quemado
+  3 => '#B7950B',  // Mostaza dorado
+  4 => '#27AE60',  // Verde esmeralda
+  5 => '#196F3D',  // Verde oscuro
+  6 => '#117A65',  // Verde azulado profundo
+  7 => '#2980B9',  // Azul acero
+  8 => '#1F618D',  // Azul profundo
+  9 => '#6C3483',  // Púrpura elegante
+  10 => '#AF7AC5', // Lavanda sofisticado
+  11 => '#884EA0', // Morado berenjena
+  12 => '#6E2C00', // Marrón chocolate oscuro
+  13 => '#566573', // Gris acero azulado
 ];
+
 
 // Helper function to darken a color for hover effects
 if (!function_exists('darken_color')) {
