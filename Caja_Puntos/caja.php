@@ -13,6 +13,9 @@ $empId = $user['empresa']['id'];
 $userId = $user['id'];
 $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
 
+// Obtener el rol del usuario
+$rolUsuario = isset($_SESSION['user']['rol']) ? strtoupper($_SESSION['user']['rol']) : '';
+
 // --- Variables para mensajes de error ---
 $errorMsg = '';
 $successMsg = '';
@@ -839,9 +842,11 @@ require_once 'config_colors.php';
                   <i class="bi bi-lock"></i>
                 </button>
               ` : `
-                <button class="btn btn-outline-primary btn-sm" title="Editar" onclick="openEditModal(${row.id})">
-                  <i class="bi bi-pencil"></i>
-                </button>
+                <?php if ($rolUsuario === 'ADMIN'): ?>
+                  <button class="btn btn-outline-primary btn-sm" title="Editar" onclick="openEditModal(${row.id})">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                <?php endif; ?>
               `}
               <button class="btn btn-outline-secondary btn-sm" title="Ver detalle" onclick="openViewModal(${row.id})">
                 <i class="bi bi-eye"></i>

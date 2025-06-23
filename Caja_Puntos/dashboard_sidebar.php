@@ -4,6 +4,7 @@ $user    = $_SESSION['user'];
 $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
 $current = basename($_SERVER['SCRIPT_NAME']);
 $empId   = $user['empresa']['id'] ?? 1; // Default to ID 1 if not set
+$rolUsuario = isset($_SESSION['user']['rol']) ? strtoupper($_SESSION['user']['rol']) : '';
 
 // --- Color map based on empresa ID ---
 $colorMap = [
@@ -204,9 +205,12 @@ if (isset($_SESSION['sucursal_seleccionada'])) {
         <li><a href="recompensas.php" class="nav-link <?= $current==='recompensas.php' ? 'active' : '' ?>"><i class="bi bi-gift-fill"></i>Recompensas</a></li>
         <li><a href="canjes.php" class="nav-link <?= $current==='canjes.php' ? 'active' : '' ?>"><i class="bi bi-arrow-left-right"></i>Canjes</a></li>
         
+
+        <?php if ($rolUsuario !== 'VENDEDOR'): ?>
         <li class="sidebar-header">Caja</li>
         <li><a href="caja.php" class="nav-link <?= $current==='caja.php' ? 'active' : '' ?>"><i class="bi bi-cash-stack"></i>Administrar Caja</a></li>
         <li><a href="movimientos_caja.php" class="nav-link <?= $current==='movimientos_caja.php' ? 'active' : '' ?>"><i class="bi bi-arrow-repeat"></i>Movimientos</a></li>
+        <?php endif; ?>
     </ul>
 
     <div class="sidebar-footer">
