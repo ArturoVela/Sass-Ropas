@@ -115,9 +115,16 @@ $current = basename($_SERVER['SCRIPT_NAME']);
         color: <?= $brandColor ?> !important;
     }
 
-    .metric-card .card-title,
-    .metric-card .display-4 {
-        color: <?= $brandColor ?> !important;
+    .metric-card {
+        border-left: 5px solid #dee2e6;
+        transition: all 0.3s ease-in-out;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0, .15);
+    }
+    .metric-card .card-body {
+        padding: 1.5rem;
     }
 
     .user-menu { position: relative; }
@@ -167,6 +174,7 @@ $current = basename($_SERVER['SCRIPT_NAME']);
 <body class="bg-light">
 
   <?php include 'dashboard_sidebar.php'; ?>
+  <?php include 'header_sidebar.php'; ?>
  
   
 
