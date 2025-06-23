@@ -65,6 +65,60 @@ if ($sucursalSeleccionada) {
     }
 }
 
+// --- Obtener la última caja abierta para la sucursal seleccionada ---
+$curl = curl_init();
+curl_setopt_array($curl, array(
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/caja',
+  CURLOPT_RETURNTRANSFER => true,
+  CURLOPT_ENCODING => '',
+  CURLOPT_MAXREDIRS => 10,
+  CURLOPT_TIMEOUT => 0,
+  CURLOPT_FOLLOWLOCATION => true,
+  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+  CURLOPT_CUSTOMREQUEST => 'GET',
+  CURLOPT_HTTPHEADER => array(
+    'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
+  ),
+));
+$response = curl_exec($curl);
+curl_close($curl);
+
+$cajasCompletas = json_decode($response, true);
+if (!is_array($cajasCompletas)) $cajasCompletas = [];
+
+// --- Filtrado para mostrar solo las cajas de la empresa actual ---
+$cajasEmpresa = array_filter($cajasCompletas, function($caja) use ($empId) {
+    return isset($caja['sucursalId']['empresa']['id']) && 
+           $caja['sucursalId']['empresa']['id'] == $empId;
+});
+
+// --- Filtrado adicional por sucursal seleccionada ---
+$cajasSucursal = $cajasEmpresa;
+if ($sucursalSeleccionada) {
+    $cajasSucursal = array_filter($cajasEmpresa, function($caja) use ($sucursalSeleccionada) {
+        return isset($caja['sucursalId']['id']) && 
+               $caja['sucursalId']['id'] == $sucursalSeleccionada;
+    });
+}
+
+// --- Ordenar cajas: primero las abiertas (más recientes primero), luego las cerradas ---
+usort($cajasSucursal, function($a, $b) {
+    // Si ambas están abiertas o ambas cerradas, ordenar por ID descendente
+    if ($a['estado'] == $b['estado']) {
+        return $b['id'] - $a['id'];
+    }
+    // Si una está abierta y otra cerrada, la abierta va primero
+    return $b['estado'] - $a['estado'];
+});
+
+// --- Buscar la última caja abierta de la sucursal seleccionada ---
+$cajasAbiertas = array_filter($cajasSucursal, fn($c) => $c['estado'] == 1);
+$ultimaCajaAbierta = null;
+if (!empty($cajasAbiertas)) {
+    usort($cajasAbiertas, fn($a, $b) => $b['id'] - $a['id']);
+    $ultimaCajaAbierta = $cajasAbiertas[0];
+}
+
 // --- Llamada al endpoint de movimientos de caja ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
@@ -101,8 +155,22 @@ if ($sucursalSeleccionada) {
     });
 }
 
-// --- Cálculo de estadísticas ---
-$total_movimientos = count($movimientosSucursal);
+// --- Filtrado por fecha (solo movimientos del día de hoy) ---
+$movimientosHoy = array_filter($movimientosSucursal, function($movimiento) {
+    return date('Y-m-d') === date('Y-m-d', strtotime($movimiento['fecha']));
+});
+
+// --- Filtrado por última caja abierta (si existe) ---
+$movimientosFinales = $movimientosHoy;
+if ($ultimaCajaAbierta) {
+    $movimientosFinales = array_filter($movimientosHoy, function($movimiento) use ($ultimaCajaAbierta) {
+        return isset($movimiento['caja']['id']) && 
+               $movimiento['caja']['id'] == $ultimaCajaAbierta['id'];
+    });
+}
+
+// --- Cálculo de estadísticas basadas en los movimientos filtrados ---
+$total_movimientos = count($movimientosFinales);
 
 // Calcular movimientos por tipo
 $movimientos_ingresos = 0;
@@ -110,7 +178,7 @@ $movimientos_egresos = 0;
 $total_ingresos = 0;
 $total_egresos = 0;
 
-foreach ($movimientosSucursal as $movimiento) {
+foreach ($movimientosFinales as $movimiento) {
     if ($movimiento['monto'] > 0) {
         $movimientos_ingresos++;
         $total_ingresos += $movimiento['monto'];
@@ -123,12 +191,7 @@ foreach ($movimientosSucursal as $movimiento) {
 // Calcular total neto (ingresos - egresos)
 $total_neto = $total_ingresos - $total_egresos;
 
-// Filtrar movimientos del día
-$movimientosHoy = array_filter($movimientosSucursal, function($movimiento) {
-    return date('Y-m-d') === date('Y-m-d', strtotime($movimiento['fecha']));
-});
-
-$movimientos_hoy = count($movimientosHoy);
+$movimientos_hoy = $total_movimientos;
 
 require_once 'config_colors.php';
 
@@ -189,6 +252,36 @@ require_once 'config_colors.php';
           </button>
         </div>
       </div>
+
+      <!-- Información de la última caja abierta -->
+      <?php if ($ultimaCajaAbierta): ?>
+      <div class="alert alert-info border-0 shadow-sm mb-4">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+          <div>
+            <h6 class="mb-1 fw-bold">Última Caja Abierta</h6>
+            <p class="mb-0">
+              Mostrando movimientos de la <strong>Caja #<?= $ultimaCajaAbierta['id'] ?></strong> 
+              en <strong><?= $nombreSucursalSeleccionada ?></strong> 
+              del día <strong><?= date('d/m/Y') ?></strong>
+            </p>
+          </div>
+        </div>
+      </div>
+      <?php else: ?>
+      <div class="alert alert-warning border-0 shadow-sm mb-4">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+          <div>
+            <h6 class="mb-1 fw-bold">Sin Caja Abierta</h6>
+            <p class="mb-0">
+              No hay cajas abiertas en <strong><?= $nombreSucursalSeleccionada ?></strong>. 
+              Los movimientos mostrados corresponden al día <strong><?= date('d/m/Y') ?></strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+      <?php endif; ?>
 
       <!-- Tarjetas de Estadísticas -->
       <div class="row mb-4">
@@ -270,9 +363,12 @@ require_once 'config_colors.php';
       <div class="card shadow-sm">
         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
           <h5 class="mb-0 text-primary-emphasis">
-            Historial de Movimientos
+            Movimientos del Día
             <?php if ($nombreSucursalSeleccionada): ?>
               <small class="text-muted">- <?= $nombreSucursalSeleccionada ?></small>
+            <?php endif; ?>
+            <?php if ($ultimaCajaAbierta): ?>
+              <small class="text-muted">- Caja #<?= $ultimaCajaAbierta['id'] ?></small>
             <?php endif; ?>
           </h5>
           <div class="col-md-4">
@@ -313,7 +409,7 @@ require_once 'config_colors.php';
   
   <script>
     // Pasamos los datos de PHP a JavaScript de forma segura
-    const movimientosData = <?php echo json_encode(array_values($movimientosSucursal)); ?>;
+    const movimientosData = <?php echo json_encode(array_values($movimientosFinales)); ?>;
     
     // Configuración de paginación
     const itemsPerPage = 10;

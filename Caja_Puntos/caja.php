@@ -98,6 +98,16 @@ if ($sucursalSeleccionada) {
     });
 }
 
+// --- Ordenar cajas: primero las abiertas (más recientes primero), luego las cerradas ---
+usort($cajasSucursal, function($a, $b) {
+    // Si ambas están abiertas o ambas cerradas, ordenar por ID descendente
+    if ($a['estado'] == $b['estado']) {
+        return $b['id'] - $a['id'];
+    }
+    // Si una está abierta y otra cerrada, la abierta va primero
+    return $b['estado'] - $a['estado'];
+});
+
 // --- Buscar la última caja abierta del usuario actual en la sucursal seleccionada ---
 $cajasAbiertas = array_filter($cajasSucursal, fn($c) => $c['estado'] == 1 && $c['usuarioId']['id'] == $userId);
 $ultimaCajaAbierta = null;
@@ -548,12 +558,6 @@ require_once 'config_colors.php';
           </button>
           <p> </p>
 
-          <?php if ($ultimaCajaAbierta): ?>
-            <button class="btn btn-warning d-flex align-items-center me-2" data-bs-toggle="modal" data-bs-target="#cerrarCajaModal">
-              <i class="bi bi-lock"></i> Cerrar Caja
-            </button>
-          <?php endif; ?>
-          <p> </p>
 
           <button id="exportBtn" class="btn btn-success d-flex align-items-center">
             <i class="bi bi-file-earmark-excel-fill me-1"></i> Exportar a Excel
