@@ -118,28 +118,38 @@ $pageTitle = $page_titles[$current_page_script] ?? 'Módulo';
 
     /* Styles for Theme Switcher */
     .theme-btn {
-        background: none;
-        border: 1px solid var(--brand-color);
-        border-radius: 50%;
-        color: var(--brand-color);
-        width: 40px;
-        height: 40px;
         display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 0.75rem;
+        padding: 0.5rem 1rem;
+        background: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        cursor: pointer;
         transition: all 0.3s ease;
+        text-decoration: none;
+        color: #343a40;
+        font-weight: 600;
+        height: 40px;
+        min-width: 160px;
+        box-sizing: border-box;
     }
     .theme-btn:hover, .theme-btn.active {
-        border-color: var(--brand-color-hover);
-        color: var(--brand-color-hover);
+        border-color: var(--brand-color);
+        color: var(--brand-color);
+        background: #f8f9fa;
     }
-    .theme-dot {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: .75rem;
-        border: 1px solid #ccc;
+    .theme-btn i,
+    .theme-btn .theme-menu-label {
+        color: inherit !important;
+    }
+    .theme-menu-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .dropdown .dropdown-menu {
+        min-width: 180px;
+        margin-top: 0.5rem;
     }
 
     /* Layout adjustment for main content */
@@ -156,22 +166,61 @@ $pageTitle = $page_titles[$current_page_script] ?? 'Módulo';
     .metric-card .display-4 {
         color: var(--brand-color) !important;
     }
+
+    /* Botón de actualizar */
+    .refresh-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        background: transparent;
+        color: var(--brand-color);
+        font-size: 1.2rem;
+        cursor: pointer;
+        margin-right: 0.5rem;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .refresh-btn:hover {
+        border-color: var(--brand-color-hover);
+        color: var(--brand-color-hover);
+        background: #f8f9fa;
+    }
+    .refresh-btn .fa-sync-alt {
+        transition: transform 0.6s cubic-bezier(.4,2.3,.3,1);
+    }
+    .refresh-btn.refreshing .fa-sync-alt {
+        animation: spin-refresh 0.8s linear infinite;
+    }
+    @keyframes spin-refresh {
+        100% { transform: rotate(360deg); }
+    }
 </style>
 
 <header class="main-header">
     <div class="header-content">
         <h1 class="page-title"><?= htmlspecialchars($pageTitle) ?></h1>
         <div class="d-flex align-items-center">
+            <!-- Botón de actualizar -->
+            <button class="refresh-btn me-2" id="refreshBtn" title="Actualizar" onclick="manualRefresh()">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            
             <!-- Theme Switcher -->
             <div class="dropdown me-3">
                 <button class="theme-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Cambiar Tema">
                     <i class="fas fa-palette"></i>
+                    <span class="theme-menu-label ms-2">Temas</span>
+                    <i class="fas fa-chevron-down ms-2"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <?php foreach ($themeColors as $theme): ?>
                     <li>
                         <a class="dropdown-item theme-select" href="#" data-color="<?= $theme['hex'] ?>">
-                            <span class="theme-dot" style="background-color: <?= $theme['hex'] ?>;"></span>
+                            <span class="theme-dot" style="background-color: <?= $theme['hex'] ?>; width: 16px; height: 16px; border-radius: 50%; display: inline-block; margin-right: .75rem; border: 1px solid #ccc;"></span>
                             <?= htmlspecialchars($theme['name']) ?>
                         </a>
                     </li>
@@ -259,4 +308,21 @@ $pageTitle = $page_titles[$current_page_script] ?? 'Módulo';
             applyTheme(savedColor);
         }
     });
+
+    // Recarga automática cada 10 segundos
+    function triggerRefreshAnimation() {
+        const btn = document.getElementById('refreshBtn');
+        if (btn) {
+            btn.classList.add('refreshing');
+            setTimeout(() => btn.classList.remove('refreshing'), 1000);
+        }
+    }
+    function manualRefresh() {
+        triggerRefreshAnimation();
+        setTimeout(() => location.reload(), 600);
+    }
+    setInterval(() => {
+        triggerRefreshAnimation();
+        setTimeout(() => location.reload(), 600);
+    }, 10000);
 </script> 
