@@ -511,31 +511,50 @@ if (!empty($canjesEmpresa)) {
             <div class="row">
               <div class="col-md-6">
                 <label class="form-label fw-bold">Cliente</label>
-                <select name="cliente_id" class="form-select" required>
+                <select name="cliente_id" id="clienteSelect" class="form-select" required onchange="filtrarRecompensas()">
                   <option value="">Seleccionar Cliente</option>
                   <?php foreach ($clientesEmpresa as $cliente): ?>
-                    <option value="<?= $cliente['clienteId']['id'] ?>">
-                      <?= htmlspecialchars($cliente['clienteId']['nombre']) ?> - <?= htmlspecialchars($cliente['clienteId']['numeroDocumento']) ?>
+                    <option value="<?= $cliente['clienteId']['id'] ?>" data-puntos="<?= $cliente['puntos_acumulados'] ?>">
+                      <?= htmlspecialchars($cliente['clienteId']['nombre']) ?> - <?= htmlspecialchars($cliente['clienteId']['numeroDocumento']) ?> (<?= $cliente['puntos_acumulados'] ?> pts)
                     </option>
                   <?php endforeach; ?>
                 </select>
+                <div id="puntosInfo" class="mt-2" style="display: none;">
+                  <small class="text-muted">
+                    <strong>Puntos acumulados:</strong> <span id="puntosAcumulados">0</span><br>
+                    <strong>Puntos utilizados:</strong> <span id="puntosUtilizados">0</span><br>
+                    <strong>Puntos disponibles:</strong> <span id="puntosDisponibles">0</span>
+                  </small>
+                </div>
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-bold">Recompensa</label>
-                <select name="recompensa_id" class="form-select" required>
+                <select name="recompensa_id" id="recompensaSelect" class="form-select" required>
                   <option value="">Seleccionar Recompensa</option>
                   <?php foreach ($recompensasCompletas as $recompensa): ?>
-                    <option value="<?= $recompensa['id'] ?>">
-                      <?= htmlspecialchars($recompensa['nombre']) ?> (<?= $recompensa['puntos_requeridos'] ?> pts)
+                    <option value="<?= $recompensa['id'] ?>" data-puntos="<?= $recompensa['puntos_requeridos'] ?>" data-stock="<?= $recompensa['stock'] ?>">
+                      <?= htmlspecialchars($recompensa['nombre']) ?> (<?= $recompensa['puntos_requeridos'] ?> pts) - Stock: <?= $recompensa['stock'] ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
+                <div id="recompensaInfo" class="mt-2" style="display: none;">
+                  <small class="text-muted">
+                    <strong>Puntos requeridos:</strong> <span id="puntosRequeridos">0</span><br>
+                    <strong>Stock disponible:</strong> <span id="stockDisponible">0</span>
+                  </small>
+                </div>
+                <div id="noRecompensasMsg" class="mt-2 alert alert-warning" style="display: none;">
+                  <small>
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Este cliente no tiene suficientes puntos para canjear ninguna recompensa disponible.
+                  </small>
+                </div>
               </div>
             </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success">Crear Canje</button>
+            <button type="submit" id="btnCrearCanje" class="btn btn-success" disabled>Crear Canje</button>
           </div>
         </form>
       </div>
@@ -764,6 +783,25 @@ if (!empty($canjesEmpresa)) {
     paginationContainer.addEventListener('click', handlePaginationClick);
     document.getElementById('exportBtn').addEventListener('click', exportToExcel);
     
+    // Inicializar modal de crear canje
+    document.getElementById('createModal').addEventListener('show.bs.modal', function() {
+      // Limpiar formulario
+      document.getElementById('clienteSelect').value = '';
+      document.getElementById('recompensaSelect').value = '';
+      document.getElementById('puntosInfo').style.display = 'none';
+      document.getElementById('recompensaInfo').style.display = 'none';
+      document.getElementById('noRecompensasMsg').style.display = 'none';
+      document.getElementById('btnCrearCanje').disabled = true;
+      
+      // Mostrar todas las recompensas
+      Array.from(document.getElementById('recompensaSelect').options).forEach(option => {
+        if (option.value !== '') {
+          option.style.display = '';
+          option.disabled = false;
+        }
+      });
+    });
+    
     // Render inicial
     renderTable();
     renderPagination();
@@ -801,6 +839,88 @@ if (!empty($canjesEmpresa)) {
       link.click();
       
       document.body.removeChild(link);
+    }
+
+    function filtrarRecompensas() {
+      const clienteId = document.getElementById('clienteSelect').value;
+      const recompensaSelect = document.getElementById('recompensaSelect');
+      const puntosInfo = document.getElementById('puntosInfo');
+      const recompensaInfo = document.getElementById('recompensaInfo');
+      const btnCrearCanje = document.getElementById('btnCrearCanje');
+      
+      // Limpiar selección de recompensa
+      recompensaSelect.value = '';
+      recompensaInfo.style.display = 'none';
+      btnCrearCanje.disabled = true;
+      
+      if (!clienteId) {
+        puntosInfo.style.display = 'none';
+        // Mostrar todas las recompensas
+        Array.from(recompensaSelect.options).forEach(option => {
+          if (option.value !== '') {
+            option.style.display = '';
+            option.disabled = false;
+          }
+        });
+        return;
+      }
+      
+      // Buscar datos del cliente
+      const cliente = clientesData.find(c => c.clienteId.id == clienteId);
+      if (!cliente) return;
+      
+      // Mostrar información de puntos del cliente
+      document.getElementById('puntosAcumulados').textContent = cliente.puntos_acumulados;
+      document.getElementById('puntosUtilizados').textContent = cliente.puntos_utilizados;
+      document.getElementById('puntosDisponibles').textContent = cliente.puntos_acumulados - cliente.puntos_utilizados;
+      puntosInfo.style.display = 'block';
+      
+      const puntosDisponibles = cliente.puntos_acumulados - cliente.puntos_utilizados;
+      
+      // Filtrar recompensas según puntos disponibles
+      Array.from(recompensaSelect.options).forEach(option => {
+        if (option.value === '') return; // Saltar la opción por defecto
+        
+        const puntosRecompensa = parseInt(option.dataset.puntos);
+        const stockRecompensa = parseInt(option.dataset.stock);
+        
+        if (puntosRecompensa <= puntosDisponibles && stockRecompensa > 0) {
+          option.style.display = '';
+          option.disabled = false;
+        } else {
+          option.style.display = 'none';
+          option.disabled = true;
+        }
+      });
+      
+      // Verificar si hay recompensas disponibles
+      const recompensasDisponibles = Array.from(recompensaSelect.options).filter(option => 
+        option.value !== '' && !option.disabled && option.style.display !== 'none'
+      );
+      
+      const noRecompensasMsg = document.getElementById('noRecompensasMsg');
+      if (recompensasDisponibles.length === 0) {
+        noRecompensasMsg.style.display = 'block';
+      } else {
+        noRecompensasMsg.style.display = 'none';
+      }
+      
+      // Agregar evento para mostrar información de recompensa seleccionada
+      recompensaSelect.onchange = function() {
+        const recompensaId = this.value;
+        if (recompensaId) {
+          const recompensa = recompensasData.find(r => r.id == recompensaId);
+          if (recompensa) {
+            document.getElementById('puntosRequeridos').textContent = recompensa.puntos_requeridos;
+            document.getElementById('stockDisponible').textContent = recompensa.stock;
+            recompensaInfo.style.display = 'block';
+            btnCrearCanje.disabled = false;
+          }
+        } else {
+          recompensaInfo.style.display = 'none';
+          btnCrearCanje.disabled = true;
+        }
+      };
     }
   </script>
 

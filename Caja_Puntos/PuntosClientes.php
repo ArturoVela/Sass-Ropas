@@ -5,6 +5,18 @@ if (!isset($_SESSION['user'])) {
   exit;
 }
 
+// Debug básico para verificar si se recibe POST
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    error_log("=== POST RECIBIDO ===");
+    error_log("Datos POST: " . json_encode($_POST));
+    if (isset($_POST['estado'])) {
+        error_log("ESTADO RECIBIDO: " . $_POST['estado'] . " (tipo: " . gettype($_POST['estado']) . ")");
+    } else {
+        error_log("ERROR: Campo 'estado' NO está presente");
+    }
+    error_log("====================");
+}
+
 // Configurar zona horaria de Perú
 date_default_timezone_set('America/Lima');
 
@@ -16,7 +28,82 @@ require_once 'config_colors.php';
 
 // --- Lógica de edición POST ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
+    // Verificar que todos los campos requeridos estén presentes
+    if (!isset($_POST['estado'])) {
+        error_log("ERROR: Campo 'estado' no está presente en el formulario");
+        error_log("Campos recibidos: " . implode(', ', array_keys($_POST)));
+        header("Location: PuntosClientes.php");
+        exit;
+    }
+    
+    // Debug: Mostrar los datos recibidos
+    error_log("Datos recibidos en edición: " . json_encode($_POST));
+    error_log("Campo estado recibido: " . (isset($_POST['estado']) ? $_POST['estado'] : 'NO EXISTE'));
+    error_log("Tipo de estado: " . (isset($_POST['estado']) ? gettype($_POST['estado']) : 'NO EXISTE'));
+    error_log("Estado es string vacío?: " . (isset($_POST['estado']) && $_POST['estado'] === '' ? 'SÍ' : 'NO'));
+    error_log("Estado es null?: " . (isset($_POST['estado']) && $_POST['estado'] === null ? 'SÍ' : 'NO'));
+    
+    // Validar datos
+    $id = intval($_POST['id']);
+    $clienteId = intval($_POST['clienteId']);
+    $puntosAcumulados = intval($_POST['puntos_acumulados']);
+    $puntosUtilizados = intval($_POST['puntos_utilizados']);
+    $estado = intval($_POST['estado']);
+    
+    error_log("Estado después de intval: " . $estado);
+    error_log("Estado es 0?: " . ($estado === 0 ? 'SÍ' : 'NO'));
+    error_log("Estado es 1?: " . ($estado === 1 ? 'SÍ' : 'NO'));
+    error_log("Estado en array [0,1]?: " . (in_array($estado, [0, 1], true) ? 'SÍ' : 'NO'));
+    error_log("Estado es exactamente 0?: " . ($estado === 0 ? 'SÍ' : 'NO'));
+    error_log("Estado es exactamente 1?: " . ($estado === 1 ? 'SÍ' : 'NO'));
+    
+    // Validaciones básicas
+    error_log("Validando datos - ID: $id, ClienteID: $clienteId, PuntosAcum: $puntosAcumulados, PuntosUtil: $puntosUtilizados, Estado: $estado");
+    
+    if ($id <= 0) {
+        error_log("ERROR: ID inválido");
+        header("Location: PuntosClientes.php");
+        exit;
+    }
+    
+    if ($clienteId <= 0) {
+        error_log("ERROR: ClienteID inválido");
+        header("Location: PuntosClientes.php");
+        exit;
+    }
+    
+    if ($puntosAcumulados < 0) {
+        error_log("ERROR: Puntos acumulados inválidos");
+        header("Location: PuntosClientes.php");
+        exit;
+    }
+    
+    if ($puntosUtilizados < 0) {
+        error_log("ERROR: Puntos utilizados inválidos");
+        header("Location: PuntosClientes.php");
+        exit;
+    }
+    
+    if ($estado !== 0 && $estado !== 1) {
+        error_log("ERROR: Estado inválido - debe ser 0 o 1, recibido: $estado");
+        header("Location: PuntosClientes.php");
+        exit;
+    }
+    
+    error_log("Validación exitosa - procediendo con la actualización");
+    
     // Actualizar datos del punto
+    $jsonData = '{
+        "id": '.$id.',
+        "clienteId": '.$clienteId.',
+        "puntos_acumulados": '.$puntosAcumulados.',
+        "puntos_utilizados": '.$puntosUtilizados.',
+        "estado": '.$estado.',
+        "ultima_actualizacion": "'.date('Y-m-d\TH:i:s').'"
+    }';
+    
+    error_log("JSON a enviar: " . $jsonData);
+    
     $curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/puntosclientes',
@@ -27,52 +114,62 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => 'PUT',
-        CURLOPT_POSTFIELDS => '{
-            "id": '.$_POST['id'].',
-            "clienteId": '.$_POST['clienteId'].',
-            "puntos_acumulados": '.$_POST['puntos_acumulados'].',
-            "puntos_utilizados": '.$_POST['puntos_utilizados'].',
-            "estado": '.$_POST['estado'].',
-            "ultima_actualizacion": "'.date('Y-m-d\TH:i:s').'"
-        }',
+        CURLOPT_POSTFIELDS => $jsonData,
         CURLOPT_HTTPHEADER => array(
             'Content-Type: application/json',
             'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
         ),
     ));
     $response = curl_exec($curl);
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($curl);
     curl_close($curl);
     
-    // --- Registrar en Auditoría ---
-    $curl = curl_init();
-    curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_POSTFIELDS => '{
-            "usuario": {"id":'.$user['id'].'},
-            "empresa": {"id":'.$user['empresa']['id'].'},
-            "sucursal": {"id":'.($_SESSION['sucursal_seleccionada'] ?? 1).'},
-            "evento": "EDICIÓN DE PUNTOS",
-            "descripcion": "Se editó puntos del cliente ID: '.$_POST['clienteId'].' - Puntos Acumulados: '.$_POST['puntos_acumulados'].' - Puntos Utilizados: '.$_POST['puntos_utilizados'].' - Estado: '.($_POST['estado'] == 1 ? 'Activo' : 'Inactivo').'",
-            "fecha": "'.date('Y-m-d\TH:i:s').'",
-            "estado": 1
-        }',
-        CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/json',
-            'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
-        ),
-    ));
-    curl_exec($curl);
-    curl_close($curl);
+    // Debug: Mostrar respuesta de la API
+    error_log("=== RESPUESTA DE LA API ===");
+    error_log("HTTP Code: " . $httpCode);
+    error_log("CURL Error: " . $curlError);
+    error_log("Respuesta: " . $response);
+    error_log("JSON enviado: " . $jsonData);
+    error_log("==========================");
     
-    header("Location: PuntosClientes.php");
-    exit;
+    if ($httpCode >= 200 && $httpCode < 300) {
+        error_log("API respondió exitosamente");
+        // --- Registrar en Auditoría ---
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => '{
+                "usuario": {"id":'.$user['id'].'},
+                "empresa": {"id":'.$user['empresa']['id'].'},
+                "sucursal": {"id":'.($_SESSION['sucursal_seleccionada'] ?? 1).'},
+                "evento": "EDICIÓN DE PUNTOS",
+                "descripcion": "Se editó puntos del cliente ID: '.$_POST['clienteId'].' - Puntos Acumulados: '.$_POST['puntos_acumulados'].' - Puntos Utilizados: '.$_POST['puntos_utilizados'].' - Estado: '.($_POST['estado'] == 1 ? 'Activo' : 'Inactivo').'",
+                "fecha": "'.date('Y-m-d\TH:i:s').'",
+                "estado": 1
+            }',
+            CURLOPT_HTTPHEADER => array(
+                'Content-Type: application/json',
+                'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
+            ),
+        ));
+        curl_exec($curl);
+        curl_close($curl);
+        
+        header("Location: PuntosClientes.php");
+        exit;
+    } else {
+        // Si hay error, redirigir sin mensaje
+        header("Location: PuntosClientes.php");
+        exit;
+    }
 }
 
 // --- Llamada al endpoint para obtener todos los puntos ---
@@ -267,7 +364,7 @@ $total_disponibles = $total_acumulados - $total_utilizados;
   <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
-        <form method="post">
+        <form method="post" action="PuntosClientes.php">
           <div class="modal-header bg-light text-danger border-bottom-0">
             <h5 class="modal-title" id="editModalLabel"><i class="bi bi-pencil-square me-2"></i>Editar Puntos de Cliente</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -277,7 +374,7 @@ $total_disponibles = $total_acumulados - $total_utilizados;
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-success">Guardar Cambios</button>
+            <button type="submit" class="btn btn-success" id="btnGuardarCambios">Guardar Cambios</button>
           </div>
         </form>
       </div>
@@ -472,6 +569,10 @@ $total_disponibles = $total_acumulados - $total_utilizados;
 
       const cliente = record.clienteId;
       
+      // Debug: Mostrar los datos del registro en consola
+      console.log('Datos del registro a editar:', record);
+      console.log('Estado actual:', record.estado, 'Tipo:', typeof record.estado);
+      
       let modalBody = `
         <input type="hidden" name="id" value="${record.id}">
         <input type="hidden" name="clienteId" value="${cliente.id}">
@@ -502,10 +603,11 @@ $total_disponibles = $total_acumulados - $total_utilizados;
           </div>
           <div class="col-md-4">
             <label class="form-label fw-bold">Estado</label>
-            <select name="estado" class="form-select" required>
-              <option value="1" ${record.estado == 1 ? 'selected' : ''}>Activo</option>
-              <option value="0" ${record.estado == 0 ? 'selected' : ''}>Inactivo</option>
+            <select name="estado" class="form-select">
+              <option value="1" ${parseInt(record.estado) === 1 ? 'selected' : ''}>Activo</option>
+              <option value="0" ${parseInt(record.estado) === 0 ? 'selected' : ''}>Inactivo</option>
             </select>
+            <small class="text-muted">Estado actual: ${record.estado} (${parseInt(record.estado) === 1 ? 'Activo' : 'Inactivo'})</small>
           </div>
         </div>
       `;
@@ -563,6 +665,73 @@ $total_disponibles = $total_acumulados - $total_utilizados;
     // Event listener para el menú de ordenamiento
     document.querySelectorAll('.dropdown-item[data-sort]').forEach(item => {
         item.addEventListener('click', handleSortClick);
+    });
+    
+    // Debug: Agregar event listener al formulario de edición
+    document.addEventListener('submit', function(e) {
+        if (e.target.closest('#editModal')) {
+            e.preventDefault(); // Prevenir envío automático
+            console.log('=== FORMULARIO DE EDICIÓN ENVIADO ===');
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            
+            // Debug específico para el estado
+            const estadoSelect = form.querySelector('select[name="estado"]');
+            if (estadoSelect) {
+                console.log('ESTADO SELECCIONADO:', estadoSelect.value);
+                console.log('TIPO DE ESTADO:', typeof estadoSelect.value);
+                console.log('¿ES 0?:', estadoSelect.value === '0');
+                console.log('¿ES 1?:', estadoSelect.value === '1');
+            } else {
+                console.log('ERROR: No se encontró el select de estado');
+            }
+            
+            // Verificar todos los campos
+            console.log('CAMPOS DEL FORMULARIO:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${value}`);
+            }
+            
+            // Enviar formulario manualmente
+            console.log('Enviando formulario...');
+            form.submit();
+        }
+    });
+    
+    // Debug adicional: Verificar si el modal se abre correctamente
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM cargado, verificando modal de edición');
+        const editModal = document.getElementById('editModal');
+        if (editModal) {
+            console.log('Modal de edición encontrado');
+            const form = editModal.querySelector('form');
+            if (form) {
+                console.log('Formulario encontrado en el modal');
+                
+                // Event listener específico para el botón de guardar
+                const btnGuardar = form.querySelector('#btnGuardarCambios');
+                if (btnGuardar) {
+                    console.log('Botón de guardar encontrado');
+                    btnGuardar.addEventListener('click', function(e) {
+                        console.log('Botón de guardar clickeado');
+                        console.log('Formulario válido:', form.checkValidity());
+                        
+                        // Verificar datos antes de enviar
+                        const estadoSelect = form.querySelector('select[name="estado"]');
+                        if (estadoSelect) {
+                            console.log('Estado antes de enviar:', estadoSelect.value);
+                        }
+                    });
+                } else {
+                    console.log('ERROR: No se encontró botón de guardar');
+                }
+            } else {
+                console.log('ERROR: No se encontró formulario en el modal');
+            }
+        } else {
+            console.log('ERROR: No se encontró modal de edición');
+        }
     });
     
     // Render inicial

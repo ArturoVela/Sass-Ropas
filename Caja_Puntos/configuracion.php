@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
           CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
           CURLOPT_RETURNTRANSFER => true,
           CURLOPT_CUSTOMREQUEST => 'POST',
-          CURLOPT_POSTFIELDS => '{"usuario": {"id":'.$user['id'].'},"empresa": {"id":'.$user['empresa']['id'].'},"sucursal": {"id":'.($_SESSION['sucursal_seleccionada'] ?? 1).'},"evento": "CAMBIO DE CONTRASEÑA","descripcion": "El usuario '.$user['nombre'].' ha cambiado su contraseña.","fecha": "'.$fecha_actual.'","estado": 1}',
+          CURLOPT_POSTFIELDS => '{"usuario": {"id":'.$user['id'].'},"sucursal": {"id":1},"evento": "CAMBIO DE CONTRASEÑA","descripcion": "El usuario '.$user['nombre'].' ha cambiado su contraseña.","fecha": "'.$fecha_actual.'","estado": 1}',
           CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . API_TOKEN],
         ]);
         curl_exec($auditCurl);
