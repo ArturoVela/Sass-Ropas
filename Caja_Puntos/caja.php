@@ -285,6 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                 CURLOPT_POSTFIELDS => '{
                     "usuario": {"id":'.$userId.'},
                     "empresa": {"id":'.$empId.'},
+                    "sucursal": {"id":'.($_SESSION['sucursal_seleccionada'] ?? 1).'},
                     "evento": "APERTURA DE CAJA",
                     "descripcion": "Se abrió caja en sucursal '.$nombreSucursal.' con monto inicial: S/ '.$_POST['monto_inicial'].'",
                     "fecha": "'.date('Y-m-d\TH:i:s').'",
@@ -369,6 +370,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['a
                 CURLOPT_POSTFIELDS => '{
                     "usuario": {"id":'.$userId.'},
                     "empresa": {"id":'.$empId.'},
+                    "sucursal": {"id":'.($_SESSION['sucursal_seleccionada'] ?? 1).'},
                     "evento": "CIERRE DE CAJA",
                     "descripcion": "Se cerró caja ID: '.$_POST['caja_id'].' en sucursal '.$ultimaCajaAbierta['sucursalId']['nombre'].' - Monto inicial: S/ '.$_POST['monto_inicial'].' - Monto final: S/ '.$_POST['monto_final'].'",
                     "fecha": "'.date('Y-m-d\TH:i:s').'",
@@ -448,6 +450,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id']) && !isset($_POST
             CURLOPT_POSTFIELDS => '{
                 "usuario": {"id":'.$userId.'},
                 "empresa": {"id":'.$empId.'},
+                "sucursal": {"id":'.($_SESSION['sucursal_seleccionada'] ?? 1).'},
                 "evento": "EDICIÓN DE CAJA",
                 "descripcion": "Se editó caja ID: '.$_POST['id'].' - Usuario: '.$_POST['usuario_id'].' - Monto inicial: '.$_POST['monto_inicial'].' - Estado: '.$_POST['estado'].'",
                 "fecha": "'.date('Y-m-d\TH:i:s').'",

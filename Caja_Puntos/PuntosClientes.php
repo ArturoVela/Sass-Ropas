@@ -56,7 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         CURLOPT_CUSTOMREQUEST => 'POST',
         CURLOPT_POSTFIELDS => '{
             "usuario": {"id":'.$user['id'].'},
-            "sucursal": {"id":1},
+            "empresa": {"id":'.$user['empresa']['id'].'},
+            "sucursal": {"id":'.($_SESSION['sucursal_seleccionada'] ?? 1).'},
             "evento": "EDICIÓN DE PUNTOS",
             "descripcion": "Se editó puntos del cliente ID: '.$_POST['clienteId'].' - Puntos Acumulados: '.$_POST['puntos_acumulados'].' - Puntos Utilizados: '.$_POST['puntos_utilizados'].' - Estado: '.($_POST['estado'] == 1 ? 'Activo' : 'Inactivo').'",
             "fecha": "'.date('Y-m-d\TH:i:s').'",

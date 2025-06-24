@@ -54,7 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         CURLOPT_CUSTOMREQUEST => 'POST',
         CURLOPT_POSTFIELDS => '{
             "usuario": {"id":'.$user['id'].'},
-            "sucursal": {"id":1},
+            "empresa": {"id":'.$user['empresa']['id'].'},
+            "sucursal": {"id":'.($_SESSION['sucursal_seleccionada'] ?? 1).'},
             "evento": "EDICIÓN DE CANJE",
             "descripcion": "Se editó canje ID: '.$_POST['id'].' - Cliente ID: '.$_POST['cliente_id'].' - Recompensa ID: '.$_POST['recompensa_id'].' - Fecha: '.$_POST['fecha'].'",
             "fecha": "'.date('Y-m-d\TH:i:s').'",
@@ -254,7 +255,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         CURLOPT_CUSTOMREQUEST => 'POST',
         CURLOPT_POSTFIELDS => '{
             "usuario": {"id":'.$user['id'].'},
-            "sucursal": {"id":1},
+            "empresa": {"id":'.$user['empresa']['id'].'},
+            "sucursal": {"id":'.($_SESSION['sucursal_seleccionada'] ?? 1).'},
             "evento": "CREACIÓN DE CANJE",
             "descripcion": "Se creó nuevo canje - Cliente ID: '.$_POST['cliente_id'].' - Recompensa ID: '.$_POST['recompensa_id'].' - Puntos utilizados: '.$puntosRecompensa.'",
             "fecha": "'.date('Y-m-d\TH:i:s').'",

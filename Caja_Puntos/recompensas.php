@@ -56,7 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         CURLOPT_CUSTOMREQUEST => 'POST',
         CURLOPT_POSTFIELDS => '{
             "usuario": {"id":'.$user['id'].'},
-            "sucursal": {"id":1},
+            "empresa": {"id":'.$user['empresa']['id'].'},
+            "sucursal": {"id":'.($_SESSION['sucursal_seleccionada'] ?? 1).'},
             "evento": "EDICIÓN DE RECOMPENSA",
             "descripcion": "Se editó recompensa ID: '.$_POST['id'].' - Nombre: '.$_POST['nombre'].' - Puntos: '.$_POST['puntos_requeridos'].' - Stock: '.$_POST['stock'].' - Estado: '.($_POST['estado'] == 1 ? 'Activo' : 'Inactivo').'",
             "fecha": "'.date('Y-m-d\TH:i:s').'",
@@ -112,7 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         CURLOPT_CUSTOMREQUEST => 'POST',
         CURLOPT_POSTFIELDS => '{
             "usuario": {"id":'.$user['id'].'},
-            "sucursal": {"id":1},
+            "empresa": {"id":'.$user['empresa']['id'].'},
+            "sucursal": {"id":'.($_SESSION['sucursal_seleccionada'] ?? 1).'},
             "evento": "CREACIÓN DE RECOMPENSA",
             "descripcion": "Se creó nueva recompensa: '.$_POST['nombre'].' - Puntos requeridos: '.$_POST['puntos_requeridos'].' - Stock: '.$_POST['stock'].' - Estado: '.($_POST['estado'] == 1 ? 'Activo' : 'Inactivo').'",
             "fecha": "'.date('Y-m-d\TH:i:s').'",
