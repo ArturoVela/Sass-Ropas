@@ -435,10 +435,10 @@ if (!empty($recompensas)) {
             </td>
             <td class="text-center">${estadoBadge}</td>
             <td class="text-center">
-              <button class="btn btn-outline-primary btn-sm" title="Editar" onclick="openEditModal(${row.id})">
+              <button class="btn btn-outline-primary btn-sm btn-edit-recompensa" title="Editar" data-id="${row.id}">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button class="btn btn-outline-secondary btn-sm" title="Ver detalle" onclick="openViewModal(${row.id})">
+              <button class="btn btn-outline-secondary btn-sm btn-view-recompensa" title="Ver detalle" data-id="${row.id}">
                 <i class="bi bi-eye"></i>
               </button>
             </td>
@@ -612,6 +612,20 @@ if (!empty($recompensas)) {
       
       document.body.removeChild(link);
     }
+
+    // Eliminar la actualización automática de datos vía AJAX
+    document.addEventListener('DOMContentLoaded', function() {
+      const tbody = document.getElementById('datos-actualizables');
+      tbody.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-edit-recompensa')) {
+          const id = e.target.closest('.btn-edit-recompensa').dataset.id;
+          openEditModal(id);
+        } else if (e.target.closest('.btn-view-recompensa')) {
+          const id = e.target.closest('.btn-view-recompensa').dataset.id;
+          openViewModal(id);
+        }
+      });
+    });
   </script>
 
 </body>
