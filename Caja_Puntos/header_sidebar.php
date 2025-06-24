@@ -309,20 +309,18 @@ $pageTitle = $page_titles[$current_page_script] ?? 'Módulo';
         }
     });
 
-    // Recarga automática cada 10 segundos
-    function triggerRefreshAnimation() {
-        const btn = document.getElementById('refreshBtn');
-        if (btn) {
-            btn.classList.add('refreshing');
-            setTimeout(() => btn.classList.remove('refreshing'), 1000);
-        }
-    }
+    // Función para actualizar manualmente la página
     function manualRefresh() {
-        triggerRefreshAnimation();
-        setTimeout(() => location.reload(), 600);
+        const refreshBtn = document.getElementById('refreshBtn');
+        const icon = refreshBtn.querySelector('.fa-sync-alt');
+        
+        // Agregar clase de animación
+        refreshBtn.classList.add('refreshing');
+        
+        // Simular un pequeño delay para mostrar la animación
+        setTimeout(() => {
+            // Recargar la página
+            window.location.reload();
+        }, 300);
     }
-    setInterval(() => {
-        triggerRefreshAnimation();
-        setTimeout(() => location.reload(), 600);
-    }, 10000);
 </script> 

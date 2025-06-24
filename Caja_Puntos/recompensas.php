@@ -435,7 +435,7 @@ if (!empty($recompensas)) {
             </td>
             <td class="text-center">${estadoBadge}</td>
             <td class="text-center">
-              <button class="btn btn-outline-primary btn-sm btn-edit-recompensa" title="Editar" data-id="${row.id}">
+              <button class="btn btn-outline-primary btn-sm" title="Editar" onclick="openEditModal(${row.id})">
                 <i class="bi bi-pencil"></i>
               </button>
               <button class="btn btn-outline-secondary btn-sm btn-view-recompensa" title="Ver detalle" data-id="${row.id}">
@@ -497,9 +497,7 @@ if (!empty($recompensas)) {
     function openEditModal(id) {
       const record = findRecordById(id);
       if (!record) return;
-
-      let modalBody = `
-        <input type="hidden" name="id" value="${record.id}">
+      let html = `
         <div class="row">
           <div class="col-md-6">
             <label class="form-label fw-bold">Nombre de la Recompensa</label>
@@ -529,9 +527,9 @@ if (!empty($recompensas)) {
             <textarea name="descripcion" class="form-control" rows="3">${record.descripcion || ''}</textarea>
           </div>
         </div>
+        <input type="hidden" name="id" value="${record.id}">
       `;
-      
-      document.getElementById('editModalBody').innerHTML = modalBody;
+      document.getElementById('editModalBody').innerHTML = html;
       editModal.show();
     }
 

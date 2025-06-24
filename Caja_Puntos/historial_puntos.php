@@ -40,6 +40,11 @@ if (!is_array($historialCompleto)) $historialCompleto = [];
 // --- Filtrado para mostrar solo el historial de la empresa actual ---
 $historialEmpresa = array_filter($historialCompleto, fn($h) => isset($h['clienteId']['empresaId']['id']) && $h['clienteId']['empresaId']['id'] == $empId);
 
+// --- Ordenar historial por fecha (más recientes primero) ---
+usort($historialEmpresa, function($a, $b) {
+    return strtotime($b['fecha']) - strtotime($a['fecha']);
+});
+
 // --- Cálculo de estadísticas ---
 $total_transacciones = count($historialEmpresa);
 $puntos_acumulados = array_sum(array_column(array_filter($historialEmpresa, fn($h) => $h['tipo'] === 'acumulacion'), 'puntos'));
