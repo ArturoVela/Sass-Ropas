@@ -260,9 +260,9 @@ if (!empty($recompensas)) {
       <div class="card shadow-sm">
         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
           <h5 class="mb-0 text-danger-emphasis">Listado de Recompensas</h5>
-          <div class="d-flex gap-2">
+          <div class="d-flex gap-2 align-items-center flex-grow-1" style="max-width: 700px; margin-left: auto;">
             <!-- Menú de ordenamiento -->
-            <div class="dropdown">
+            <div class="dropdown me-2">
               <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-sort-down me-1"></i>Ordenar por
               </button>
@@ -285,9 +285,7 @@ if (!empty($recompensas)) {
               </ul>
             </div>
             <!-- Buscador -->
-            <div class="col-md-4">
-              <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre o descripción...">
-            </div>
+            <input type="text" id="searchInput" class="form-control flex-grow-1 w-100" placeholder="Buscar por nombre o descripción...">
           </div>
         </div>
         <div class="card-body">
