@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
             "clienteId": '.$_POST['clienteId'].',
             "puntos_acumulados": '.$_POST['puntos_acumulados'].',
             "puntos_utilizados": '.$_POST['puntos_utilizados'].',
+            "estado": '.$_POST['estado'].',
             "ultima_actualizacion": "'.date('Y-m-d\TH:i:s').'"
         }',
         CURLOPT_HTTPHEADER => array(
@@ -57,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
             "usuario": {"id":'.$user['id'].'},
             "sucursal": {"id":1},
             "evento": "EDICIÓN DE PUNTOS",
-            "descripcion": "Se editó puntos del cliente ID: '.$_POST['clienteId'].' - Puntos Acumulados: '.$_POST['puntos_acumulados'].' - Puntos Utilizados: '.$_POST['puntos_utilizados'].'",
+            "descripcion": "Se editó puntos del cliente ID: '.$_POST['clienteId'].' - Puntos Acumulados: '.$_POST['puntos_acumulados'].' - Puntos Utilizados: '.$_POST['puntos_utilizados'].' - Estado: '.($_POST['estado'] == 1 ? 'Activo' : 'Inactivo').'",
             "fecha": "'.date('Y-m-d\TH:i:s').'",
             "estado": 1
         }',
@@ -205,8 +206,34 @@ $total_disponibles = $total_acumulados - $total_utilizados;
       <div class="card shadow-sm">
         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
           <h5 class="mb-0 text-danger-emphasis">Listado de Clientes</h5>
-          <div class="col-md-4">
-            <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre o documento...">
+          <div class="d-flex gap-2">
+            <!-- Menú de ordenamiento -->
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-sort-down me-1"></i>Ordenar por
+              </button>
+              <ul class="dropdown-menu">
+                <li><h6 class="dropdown-header">Puntos Acumulados</h6></li>
+                <li><a class="dropdown-item" href="#" data-sort="acumulados-desc">Mayor acumulación</a></li>
+                <li><a class="dropdown-item" href="#" data-sort="acumulados-asc">Menor acumulación</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">Puntos Utilizados</h6></li>
+                <li><a class="dropdown-item" href="#" data-sort="utilizados-desc">Más utilizados</a></li>
+                <li><a class="dropdown-item" href="#" data-sort="utilizados-asc">Menos utilizados</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">Nombre</h6></li>
+                <li><a class="dropdown-item" href="#" data-sort="nombre-asc">A-Z</a></li>
+                <li><a class="dropdown-item" href="#" data-sort="nombre-desc">Z-A</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">Estado</h6></li>
+                <li><a class="dropdown-item" href="#" data-sort="estado-desc">Activos primero</a></li>
+                <li><a class="dropdown-item" href="#" data-sort="estado-asc">Inactivos primero</a></li>
+              </ul>
+            </div>
+            <!-- Buscador -->
+            <div class="col-md-4">
+              <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre o documento...">
+            </div>
           </div>
         </div>
         <div class="card-body">
@@ -292,6 +319,61 @@ $total_disponibles = $total_acumulados - $total_utilizados;
     const rowsPerPage = 20;
     let currentPage = 1;
     let filteredData = [...puntosData];
+    let currentSort = 'nombre-asc'; // Ordenamiento por defecto
+
+    function sortData(sortType) {
+        currentSort = sortType;
+        const [field, direction] = sortType.split('-');
+        
+        filteredData.sort((a, b) => {
+            let valueA, valueB;
+            
+            switch(field) {
+                case 'acumulados':
+                    valueA = a.puntos_acumulados;
+                    valueB = b.puntos_acumulados;
+                    break;
+                case 'utilizados':
+                    valueA = a.puntos_utilizados;
+                    valueB = b.puntos_utilizados;
+                    break;
+                case 'nombre':
+                    valueA = a.clienteId.nombre.toLowerCase();
+                    valueB = b.clienteId.nombre.toLowerCase();
+                    break;
+                case 'estado':
+                    valueA = a.estado;
+                    valueB = b.estado;
+                    break;
+                default:
+                    return 0;
+            }
+            
+            if (direction === 'asc') {
+                return valueA > valueB ? 1 : -1;
+            } else {
+                return valueA < valueB ? 1 : -1;
+            }
+        });
+        
+        currentPage = 1;
+        renderTable();
+        renderPagination();
+    }
+
+    function handleSortClick(e) {
+        e.preventDefault();
+        const sortType = e.target.dataset.sort;
+        if (sortType) {
+            sortData(sortType);
+            
+            // Actualizar el texto del botón para mostrar el ordenamiento actual
+            const button = document.querySelector('.dropdown-toggle');
+            const icon = button.querySelector('i');
+            const text = e.target.textContent;
+            button.innerHTML = `<i class="bi bi-sort-down me-1"></i>${text}`;
+        }
+    }
 
     function renderTable() {
       tableBody.innerHTML = '';
@@ -366,9 +448,9 @@ $total_disponibles = $total_acumulados - $total_utilizados;
         return row.clienteId.nombre.toLowerCase().includes(searchTerm) ||
                row.clienteId.numeroDocumento.toLowerCase().includes(searchTerm);
       });
-      currentPage = 1;
-      renderTable();
-      renderPagination();
+      
+      // Aplicar el ordenamiento actual después de filtrar
+      sortData(currentSort);
     }
 
     function handlePaginationClick(e) {
@@ -411,13 +493,20 @@ $total_disponibles = $total_acumulados - $total_utilizados;
         <hr>
         
         <div class="row">
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label class="form-label fw-bold">Puntos Acumulados</label>
             <input type="number" name="puntos_acumulados" class="form-control" value="${record.puntos_acumulados}" required>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label class="form-label fw-bold">Puntos Utilizados</label>
             <input type="number" name="puntos_utilizados" class="form-control" value="${record.puntos_utilizados}" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Estado</label>
+            <select name="estado" class="form-select" required>
+              <option value="1" ${record.estado == 1 ? 'selected' : ''}>Activo</option>
+              <option value="0" ${record.estado == 0 ? 'selected' : ''}>Inactivo</option>
+            </select>
           </div>
         </div>
       `;
@@ -471,6 +560,11 @@ $total_disponibles = $total_acumulados - $total_utilizados;
     searchInput.addEventListener('keyup', handleSearch);
     paginationContainer.addEventListener('click', handlePaginationClick);
     document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+    
+    // Event listener para el menú de ordenamiento
+    document.querySelectorAll('.dropdown-item[data-sort]').forEach(item => {
+        item.addEventListener('click', handleSortClick);
+    });
     
     // Render inicial
     renderTable();

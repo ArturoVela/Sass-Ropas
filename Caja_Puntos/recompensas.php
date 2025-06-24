@@ -260,8 +260,34 @@ if (!empty($recompensas)) {
       <div class="card shadow-sm">
         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
           <h5 class="mb-0 text-danger-emphasis">Listado de Recompensas</h5>
-          <div class="col-md-4">
-            <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre o descripción...">
+          <div class="d-flex gap-2">
+            <!-- Menú de ordenamiento -->
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-sort-down me-1"></i>Ordenar por
+              </button>
+              <ul class="dropdown-menu">
+                <li><h6 class="dropdown-header">Nombre</h6></li>
+                <li><a class="dropdown-item" href="#" data-sort="nombre-asc">A-Z</a></li>
+                <li><a class="dropdown-item" href="#" data-sort="nombre-desc">Z-A</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">Puntos Requeridos</h6></li>
+                <li><a class="dropdown-item" href="#" data-sort="puntos-desc">Mayor a menor</a></li>
+                <li><a class="dropdown-item" href="#" data-sort="puntos-asc">Menor a mayor</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">Stock</h6></li>
+                <li><a class="dropdown-item" href="#" data-sort="stock-desc">Más stock</a></li>
+                <li><a class="dropdown-item" href="#" data-sort="stock-asc">Menos stock</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">Estado</h6></li>
+                <li><a class="dropdown-item" href="#" data-sort="estado-desc">Activas primero</a></li>
+                <li><a class="dropdown-item" href="#" data-sort="estado-asc">Inactivas primero</a></li>
+              </ul>
+            </div>
+            <!-- Buscador -->
+            <div class="col-md-4">
+              <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre o descripción...">
+            </div>
           </div>
         </div>
         <div class="card-body">
@@ -393,6 +419,60 @@ if (!empty($recompensas)) {
     const rowsPerPage = 15;
     let currentPage = 1;
     let filteredData = [...recompensasData];
+    let currentSort = 'nombre-asc'; // Ordenamiento por defecto
+
+    function sortData(sortType) {
+        currentSort = sortType;
+        const [field, direction] = sortType.split('-');
+        
+        filteredData.sort((a, b) => {
+            let valueA, valueB;
+            
+            switch(field) {
+                case 'nombre':
+                    valueA = a.nombre.toLowerCase();
+                    valueB = b.nombre.toLowerCase();
+                    break;
+                case 'puntos':
+                    valueA = a.puntos_requeridos;
+                    valueB = b.puntos_requeridos;
+                    break;
+                case 'stock':
+                    valueA = a.stock;
+                    valueB = b.stock;
+                    break;
+                case 'estado':
+                    valueA = a.estado;
+                    valueB = b.estado;
+                    break;
+                default:
+                    return 0;
+            }
+            
+            if (direction === 'asc') {
+                return valueA > valueB ? 1 : -1;
+            } else {
+                return valueA < valueB ? 1 : -1;
+            }
+        });
+        
+        currentPage = 1;
+        renderTable();
+        renderPagination();
+    }
+
+    function handleSortClick(e) {
+        e.preventDefault();
+        const sortType = e.target.dataset.sort;
+        if (sortType) {
+            sortData(sortType);
+            
+            // Actualizar el texto del botón para mostrar el ordenamiento actual
+            const button = document.querySelector('.dropdown-toggle');
+            const text = e.target.textContent;
+            button.innerHTML = `<i class="bi bi-sort-down me-1"></i>${text}`;
+        }
+    }
 
     function renderTable() {
       tableBody.innerHTML = '';
@@ -475,9 +555,9 @@ if (!empty($recompensas)) {
         return row.nombre.toLowerCase().includes(searchTerm) ||
                (row.descripcion && row.descripcion.toLowerCase().includes(searchTerm));
       });
-      currentPage = 1;
-      renderTable();
-      renderPagination();
+      
+      // Aplicar el ordenamiento actual después de filtrar
+      sortData(currentSort);
     }
 
     function handlePaginationClick(e) {
@@ -569,6 +649,11 @@ if (!empty($recompensas)) {
     searchInput.addEventListener('keyup', handleSearch);
     paginationContainer.addEventListener('click', handlePaginationClick);
     document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+    
+    // Event listener para el menú de ordenamiento
+    document.querySelectorAll('.dropdown-item[data-sort]').forEach(item => {
+        item.addEventListener('click', handleSortClick);
+    });
     
     // Render inicial
     renderTable();
