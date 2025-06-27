@@ -246,7 +246,7 @@ $pageTitle = $page_titles[$current_page_script] ?? 'Módulo';
                     <a href="configuracion.php" class="dropdown-item"><i class="fas fa-cog"></i><span>Configuración</span></a>
                     <a href="#" class="dropdown-item"><i class="fas fa-question-circle"></i><span>Ayuda</span></a>
                     <div class="dropdown-divider"></div>
-                    <a href="logout.php" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></a>
+                    <a href="../logout.php" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt"></i><span>Cerrar Sesión</span></a>
                 </div>
             </div>
         </div>

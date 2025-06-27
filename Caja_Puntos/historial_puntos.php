@@ -92,6 +92,24 @@ $puntos_canjeados = array_sum(array_column(array_filter($historialEmpresa, fn($h
     .page-title {
       color: <?= $brandColor ?> !important;
     }
+    .table-title, .card-header.bg-white h5 {
+      color: var(--brand-color) !important;
+      font-weight: bold;
+    }
+    .pagination .page-link {
+      color: var(--brand-color) !important;
+      border-color: var(--brand-color) !important;
+    }
+    .pagination .page-item.active .page-link {
+      background-color: var(--brand-color) !important;
+      border-color: var(--brand-color) !important;
+      color: #fff !important;
+    }
+    .pagination .page-link:focus, .pagination .page-link:hover {
+      color: #fff !important;
+      background-color: var(--brand-color) !important;
+      border-color: var(--brand-color) !important;
+    }
   </style>
 </head>
 <body class="bg-light">

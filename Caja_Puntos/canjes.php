@@ -73,32 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     exit;
 } elseif ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['cliente_id']) && !isset($_POST['id'])) {
     // Crear nuevo canje - NO enviar el campo id
-    $curl = curl_init();
-
-    curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/Canjes',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_POSTFIELDS => '{
-            "cliente_id": '.$_POST['cliente_id'].',
-            "recompensa_id": '.$_POST['recompensa_id'].',
-            "fecha": "'.date('Y-m-d\TH:i:s').'"
-        }',
-        CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/json',
-            'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
-        ),
-    ));
-
-    $response = curl_exec($curl);
-    curl_close($curl);
     
-    // --- Obtener información de la recompensa para saber cuántos puntos cuesta ---
+    // --- VALIDACIONES ANTES DE CREAR EL CANJE ---
+    $error_messages = [];
+    
+    // 1. Verificar que la recompensa esté activa
     $curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/recompensas',
@@ -125,9 +104,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         }
     }
     
-    $puntosRecompensa = $recompensaSeleccionada ? $recompensaSeleccionada['puntos_requeridos'] : 0;
+    if (!$recompensaSeleccionada) {
+        $error_messages[] = "La recompensa seleccionada no existe.";
+    } elseif ($recompensaSeleccionada['estado'] != 1) {
+        $error_messages[] = "La recompensa seleccionada está desactivada y no puede ser canjeada.";
+    } elseif ($recompensaSeleccionada['stock'] <= 0) {
+        $error_messages[] = "La recompensa seleccionada no tiene stock disponible.";
+    }
     
-    // --- Obtener puntos actuales del cliente ---
+    // 2. Verificar que el cliente tenga suficientes puntos
     $curl = curl_init();
     curl_setopt_array($curl, array(
         CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/puntosclientes',
@@ -153,6 +138,52 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
             break;
         }
     }
+    
+    if (!$clientePuntos) {
+        $error_messages[] = "El cliente seleccionado no existe en el sistema de puntos.";
+    } else {
+        $puntosDisponibles = $clientePuntos['puntos_acumulados'] - $clientePuntos['puntos_utilizados'];
+        $puntosRecompensa = $recompensaSeleccionada ? $recompensaSeleccionada['puntos_requeridos'] : 0;
+        
+        if ($puntosDisponibles < $puntosRecompensa) {
+            $error_messages[] = "El cliente no tiene suficientes puntos. Puntos disponibles: $puntosDisponibles, Puntos requeridos: $puntosRecompensa";
+        }
+    }
+    
+    // Si hay errores, redirigir con mensaje de error
+    if (!empty($error_messages)) {
+        $_SESSION['error_messages'] = $error_messages;
+        header("Location: canjes.php");
+        exit;
+    }
+    
+    // --- SI NO HAY ERRORES, PROCEDER CON LA CREACIÓN DEL CANJE ---
+    $curl = curl_init();
+
+    curl_setopt_array($curl, array(
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/Canjes',
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => '',
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 0,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => 'POST',
+        CURLOPT_POSTFIELDS => '{
+            "cliente_id": '.$_POST['cliente_id'].',
+            "recompensa_id": '.$_POST['recompensa_id'].',
+            "fecha": "'.date('Y-m-d\TH:i:s').'"
+        }',
+        CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/json',
+            'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
+        ),
+    ));
+
+    $response = curl_exec($curl);
+    curl_close($curl);
+    
+    $puntosRecompensa = $recompensaSeleccionada ? $recompensaSeleccionada['puntos_requeridos'] : 0;
     
     if ($clientePuntos) {
         // --- Actualizar puntos del cliente (restar de acumulados y sumar a utilizados) ---
@@ -181,8 +212,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
                 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
             ),
         ));
-        curl_exec($curl);
+        $responsePuntos = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
+        
+        // Verificar si la actualización de puntos fue exitosa
+        if ($httpCode !== 200) {
+            $error_messages[] = "Error al actualizar los puntos del cliente. Código HTTP: $httpCode";
+            $_SESSION['error_messages'] = $error_messages;
+            header("Location: canjes.php");
+            exit;
+        }
     }
     
     // --- Crear registro en el historial de puntos ---
@@ -208,8 +248,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
             'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
         ),
     ));
-    curl_exec($curl);
+    $responseHistorial = curl_exec($curl);
+    $httpCodeHistorial = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
+    
+    // Verificar si la creación del historial fue exitosa
+    if ($httpCodeHistorial !== 200) {
+        $error_messages[] = "Error al crear el registro en el historial de puntos. Código HTTP: $httpCodeHistorial";
+        $_SESSION['error_messages'] = $error_messages;
+        header("Location: canjes.php");
+        exit;
+    }
     
     // --- Actualizar stock de la recompensa (restar 1) ---
     if ($recompensaSeleccionada) {
@@ -224,7 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
             CURLOPT_TIMEOUT => 0,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'PUT',
+            CURLOPT_CUSTOMREQUEST => 'POST',
             CURLOPT_POSTFIELDS => '{
                 "id": '.$recompensaSeleccionada['id'].',
                 "nombre": "'.$recompensaSeleccionada['nombre'].'",
@@ -238,8 +287,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
                 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII'
             ),
         ));
-        curl_exec($curl);
+        $responseStock = curl_exec($curl);
+        $httpCodeStock = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         curl_close($curl);
+        
+        // Verificar si la actualización del stock fue exitosa
+        if ($httpCodeStock !== 200) {
+            $error_messages[] = "Error al actualizar el stock de la recompensa. Código HTTP: $httpCodeStock";
+            $_SESSION['error_messages'] = $error_messages;
+            header("Location: canjes.php");
+            exit;
+        }
     }
     
     // --- Registrar en Auditoría ---
@@ -269,6 +327,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     ));
     curl_exec($curl);
     curl_close($curl);
+    
+    // --- Mensaje de éxito ---
+    $nombreCliente = '';
+    $nombreRecompensa = '';
+    
+    // Obtener nombre del cliente
+    foreach ($clientesEmpresa as $cliente) {
+        if ($cliente['clienteId']['id'] == $_POST['cliente_id']) {
+            $nombreCliente = $cliente['clienteId']['nombre'];
+            break;
+        }
+    }
+    
+    // Obtener nombre de la recompensa
+    if ($recompensaSeleccionada) {
+        $nombreRecompensa = $recompensaSeleccionada['nombre'];
+    }
+    
+    $_SESSION['success_message'] = "Canje exitoso: $nombreCliente canjeó '$nombreRecompensa' por $puntosRecompensa puntos. Puntos restantes: " . ($clientePuntos['puntos_acumulados'] - $clientePuntos['puntos_utilizados'] - $puntosRecompensa);
     
     header("Location: canjes.php");
     exit;
@@ -396,7 +473,31 @@ if (!empty($canjesEmpresa)) {
       }
     }
     .page-title {
-      color: <?= $brandColor ?> !important;
+      color: var(--brand-color) !important;
+    }
+    /* Título de la tabla */
+    .table-title, .card-header.bg-white h5 {
+      color: var(--brand-color) !important;
+      font-weight: bold;
+    }
+    /* Botones de paginación */
+    .pagination .page-link {
+      color: var(--brand-color) !important;
+      border-color: var(--brand-color) !important;
+    }
+    .pagination .page-item.active .page-link {
+      background-color: var(--brand-color) !important;
+      border-color: var(--brand-color) !important;
+      color: #fff !important;
+    }
+    .pagination .page-link:focus, .pagination .page-link:hover {
+      color: #fff !important;
+      background-color: var(--brand-color) !important;
+      border-color: var(--brand-color) !important;
+    }
+    /* Títulos de la modal */
+    .modal-header.bg-light.text-danger, .modal-header.bg-light.text-danger h5, .modal-title, #createModalLabel, #editModalLabel {
+      color: var(--brand-color) !important;
     }
   </style>
 </head>
@@ -423,6 +524,30 @@ if (!empty($canjesEmpresa)) {
           </button>
         </div>
       </div>
+
+      <!-- Mensajes de Error -->
+      <?php if (isset($_SESSION['error_messages']) && !empty($_SESSION['error_messages'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <h6 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Error al crear el canje</h6>
+          <ul class="mb-0">
+            <?php foreach ($_SESSION['error_messages'] as $error): ?>
+              <li><?= htmlspecialchars($error) ?></li>
+            <?php endforeach; ?>
+          </ul>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['error_messages']); ?>
+      <?php endif; ?>
+
+      <!-- Mensajes de Éxito -->
+      <?php if (isset($_SESSION['success_message'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <h6 class="alert-heading"><i class="bi bi-check-circle-fill me-2"></i>Canje exitoso</h6>
+          <p class="mb-0"><?= htmlspecialchars($_SESSION['success_message']) ?></p>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php unset($_SESSION['success_message']); ?>
+      <?php endif; ?>
 
       <!-- Tarjetas de Estadísticas -->
       <div class="row mb-4">
@@ -467,9 +592,35 @@ if (!empty($canjesEmpresa)) {
       <!-- Tabla de Canjes -->
       <div class="card shadow-sm">
         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 text-danger-emphasis">Listado de Canjes</h5>
-          <div class="col-md-4">
-            <input type="text" id="searchInput" class="form-control" placeholder="Buscar por cliente o recompensa...">
+          <h5 class="mb-0 text-danger-emphasis table-title">Listado de Canjes</h5>
+          <div class="row w-100" style="max-width: 700px; margin-left: auto;">
+            <div class="col-auto pe-0 me-2">
+              <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="ordenarDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="background: var(--brand-color); border-color: var(--brand-color); color: #fff; min-width: 180px; height: 38px;">
+                  <i class="bi bi-sort-alpha-down"></i> Ordenar por
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="ordenarDropdown">
+                  <li><h6 class="dropdown-header">Puntos Canjeados</h6></li>
+                  <li><a class="dropdown-item ordenar-opcion" href="#" data-sort="puntos-desc">Mayor a menor</a></li>
+                  <li><a class="dropdown-item ordenar-opcion" href="#" data-sort="puntos-asc">Menor a mayor</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><h6 class="dropdown-header">Cliente</h6></li>
+                  <li><a class="dropdown-item ordenar-opcion" href="#" data-sort="cliente-az">A-Z</a></li>
+                  <li><a class="dropdown-item ordenar-opcion" href="#" data-sort="cliente-za">Z-A</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><h6 class="dropdown-header">Recompensa</h6></li>
+                  <li><a class="dropdown-item ordenar-opcion" href="#" data-sort="recompensa-az">A-Z</a></li>
+                  <li><a class="dropdown-item ordenar-opcion" href="#" data-sort="recompensa-za">Z-A</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><h6 class="dropdown-header">Fecha</h6></li>
+                  <li><a class="dropdown-item ordenar-opcion" href="#" data-sort="fecha-desc">Más reciente</a></li>
+                  <li><a class="dropdown-item ordenar-opcion" href="#" data-sort="fecha-asc">Menos reciente</a></li>
+                </ul>
+              </div>
+            </div>
+            <div class="col-8 ps-0">
+              <input type="text" id="searchInput" class="form-control" placeholder="Buscar por cliente o recompensa...">
+            </div>
           </div>
         </div>
         <div class="card-body">
@@ -532,15 +683,17 @@ if (!empty($canjesEmpresa)) {
                 <select name="recompensa_id" id="recompensaSelect" class="form-select" required>
                   <option value="">Seleccionar Recompensa</option>
                   <?php foreach ($recompensasCompletas as $recompensa): ?>
-                    <option value="<?= $recompensa['id'] ?>" data-puntos="<?= $recompensa['puntos_requeridos'] ?>" data-stock="<?= $recompensa['stock'] ?>">
-                      <?= htmlspecialchars($recompensa['nombre']) ?> (<?= $recompensa['puntos_requeridos'] ?> pts) - Stock: <?= $recompensa['stock'] ?>
+                    <option value="<?= $recompensa['id'] ?>" data-puntos="<?= $recompensa['puntos_requeridos'] ?>" data-stock="<?= $recompensa['stock'] ?>" data-estado="<?= $recompensa['estado'] ?>">
+                      <?= htmlspecialchars($recompensa['nombre']) ?> (<?= $recompensa['puntos_requeridos'] ?> pts) - Stock: <?= $recompensa['stock'] ?><?= $recompensa['estado'] == 0 ? ' - DESACTIVADA' : '' ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
                 <div id="recompensaInfo" class="mt-2" style="display: none;">
                   <small class="text-muted">
                     <strong>Puntos requeridos:</strong> <span id="puntosRequeridos">0</span><br>
-                    <strong>Stock disponible:</strong> <span id="stockDisponible">0</span>
+                    <strong>Stock disponible:</strong> <span id="stockDisponible">0</span><br>
+                    <strong>Estado:</strong> <span id="estadoRecompensa">Activa</span><br>
+                    <strong>Puntos restantes después del canje:</strong> <span id="puntosRestantes" class="text-success fw-bold">0</span>
                   </small>
                 </div>
                 <div id="noRecompensasMsg" class="mt-2 alert alert-warning" style="display: none;">
@@ -793,11 +946,17 @@ if (!empty($canjesEmpresa)) {
       document.getElementById('noRecompensasMsg').style.display = 'none';
       document.getElementById('btnCrearCanje').disabled = true;
       
-      // Mostrar todas las recompensas
+      // Mostrar solo recompensas activas
       Array.from(document.getElementById('recompensaSelect').options).forEach(option => {
         if (option.value !== '') {
-          option.style.display = '';
-          option.disabled = false;
+          const estadoRecompensa = parseInt(option.dataset.estado);
+          if (estadoRecompensa === 1) {
+            option.style.display = '';
+            option.disabled = false;
+          } else {
+            option.style.display = 'none';
+            option.disabled = true;
+          }
         }
       });
     });
@@ -855,11 +1014,17 @@ if (!empty($canjesEmpresa)) {
       
       if (!clienteId) {
         puntosInfo.style.display = 'none';
-        // Mostrar todas las recompensas
+        // Mostrar solo recompensas activas
         Array.from(recompensaSelect.options).forEach(option => {
           if (option.value !== '') {
-            option.style.display = '';
-            option.disabled = false;
+            const estadoRecompensa = parseInt(option.dataset.estado);
+            if (estadoRecompensa === 1) {
+              option.style.display = '';
+              option.disabled = false;
+            } else {
+              option.style.display = 'none';
+              option.disabled = true;
+            }
           }
         });
         return;
@@ -867,8 +1032,13 @@ if (!empty($canjesEmpresa)) {
       
       // Buscar datos del cliente
       const cliente = clientesData.find(c => c.clienteId.id == clienteId);
-      if (!cliente) return;
-      
+      if (!cliente) {
+        document.getElementById('puntosAcumulados').textContent = 0;
+        document.getElementById('puntosUtilizados').textContent = 0;
+        document.getElementById('puntosDisponibles').textContent = 0;
+        puntosInfo.style.display = 'block';
+        return;
+      }
       // Mostrar información de puntos del cliente
       document.getElementById('puntosAcumulados').textContent = cliente.puntos_acumulados;
       document.getElementById('puntosUtilizados').textContent = cliente.puntos_utilizados;
@@ -877,14 +1047,16 @@ if (!empty($canjesEmpresa)) {
       
       const puntosDisponibles = cliente.puntos_acumulados - cliente.puntos_utilizados;
       
-      // Filtrar recompensas según puntos disponibles
+      // Filtrar recompensas según puntos disponibles, stock y estado
       Array.from(recompensaSelect.options).forEach(option => {
         if (option.value === '') return; // Saltar la opción por defecto
         
         const puntosRecompensa = parseInt(option.dataset.puntos);
         const stockRecompensa = parseInt(option.dataset.stock);
+        const estadoRecompensa = parseInt(option.dataset.estado);
         
-        if (puntosRecompensa <= puntosDisponibles && stockRecompensa > 0) {
+        // Verificar que la recompensa esté activa, tenga stock y el cliente tenga suficientes puntos
+        if (estadoRecompensa === 1 && puntosRecompensa <= puntosDisponibles && stockRecompensa > 0) {
           option.style.display = '';
           option.disabled = false;
         } else {
@@ -901,6 +1073,21 @@ if (!empty($canjesEmpresa)) {
       const noRecompensasMsg = document.getElementById('noRecompensasMsg');
       if (recompensasDisponibles.length === 0) {
         noRecompensasMsg.style.display = 'block';
+        // Actualizar el mensaje para ser más específico
+        const puntosDisponibles = cliente.puntos_acumulados - cliente.puntos_utilizados;
+        const recompensasActivas = recompensasData.filter(r => r.estado === 1);
+        const recompensasConStock = recompensasActivas.filter(r => r.stock > 0);
+        const recompensasAccesibles = recompensasConStock.filter(r => r.puntos_requeridos <= puntosDisponibles);
+        
+        if (recompensasActivas.length === 0) {
+          noRecompensasMsg.innerHTML = '<small><i class="bi bi-exclamation-triangle me-1"></i>No hay recompensas activas disponibles.</small>';
+        } else if (recompensasConStock.length === 0) {
+          noRecompensasMsg.innerHTML = '<small><i class="bi bi-exclamation-triangle me-1"></i>No hay recompensas con stock disponible.</small>';
+        } else if (recompensasAccesibles.length === 0) {
+          noRecompensasMsg.innerHTML = '<small><i class="bi bi-exclamation-triangle me-1"></i>Este cliente no tiene suficientes puntos para canjear ninguna recompensa disponible.</small>';
+        } else {
+          noRecompensasMsg.innerHTML = '<small><i class="bi bi-exclamation-triangle me-1"></i>No hay recompensas disponibles para este cliente.</small>';
+        }
       } else {
         noRecompensasMsg.style.display = 'none';
       }
@@ -913,8 +1100,25 @@ if (!empty($canjesEmpresa)) {
           if (recompensa) {
             document.getElementById('puntosRequeridos').textContent = recompensa.puntos_requeridos;
             document.getElementById('stockDisponible').textContent = recompensa.stock;
+            document.getElementById('estadoRecompensa').textContent = recompensa.estado === 1 ? 'Activa' : 'Desactivada';
+            
+            // Calcular puntos restantes después del canje
+            const puntosDisponibles = cliente.puntos_acumulados - cliente.puntos_utilizados;
+            const puntosRestantes = puntosDisponibles - recompensa.puntos_requeridos;
+            document.getElementById('puntosRestantes').textContent = puntosRestantes;
+            
+            // Cambiar color según si quedan suficientes puntos
+            const puntosRestantesElement = document.getElementById('puntosRestantes');
+            if (puntosRestantes >= 0) {
+              puntosRestantesElement.className = 'text-success fw-bold';
+            } else {
+              puntosRestantesElement.className = 'text-danger fw-bold';
+            }
+            
             recompensaInfo.style.display = 'block';
-            btnCrearCanje.disabled = false;
+            
+            // Solo habilitar el botón si la recompensa está activa
+            btnCrearCanje.disabled = recompensa.estado !== 1;
           }
         } else {
           recompensaInfo.style.display = 'none';
@@ -922,6 +1126,44 @@ if (!empty($canjesEmpresa)) {
         }
       };
     }
+
+    // Lógica de ordenamiento
+    const ordenarOpciones = document.querySelectorAll('.ordenar-opcion');
+    ordenarOpciones.forEach(opcion => {
+      opcion.addEventListener('click', function(e) {
+        e.preventDefault();
+        const sort = this.dataset.sort;
+        switch (sort) {
+          case 'puntos-desc':
+            filteredData.sort((a, b) => b.recompensa.puntos_requeridos - a.recompensa.puntos_requeridos);
+            break;
+          case 'puntos-asc':
+            filteredData.sort((a, b) => a.recompensa.puntos_requeridos - b.recompensa.puntos_requeridos);
+            break;
+          case 'cliente-az':
+            filteredData.sort((a, b) => a.cliente_id.nombre.localeCompare(b.cliente_id.nombre));
+            break;
+          case 'cliente-za':
+            filteredData.sort((a, b) => b.cliente_id.nombre.localeCompare(a.cliente_id.nombre));
+            break;
+          case 'recompensa-az':
+            filteredData.sort((a, b) => a.recompensa.nombre.localeCompare(b.recompensa.nombre));
+            break;
+          case 'recompensa-za':
+            filteredData.sort((a, b) => b.recompensa.nombre.localeCompare(a.recompensa.nombre));
+            break;
+          case 'fecha-desc':
+            filteredData.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+            break;
+          case 'fecha-asc':
+            filteredData.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+            break;
+        }
+        currentPage = 1;
+        renderTable();
+        renderPagination();
+      });
+    });
   </script>
 
 </body>

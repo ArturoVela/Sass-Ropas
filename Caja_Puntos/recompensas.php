@@ -198,6 +198,24 @@ if (!empty($recompensas)) {
     .page-title {
       color: <?= $brandColor ?> !important;
     }
+    .table-title, .card-header.bg-white h5 {
+      color: var(--brand-color) !important;
+      font-weight: bold;
+    }
+    .pagination .page-link {
+      color: var(--brand-color) !important;
+      border-color: var(--brand-color) !important;
+    }
+    .pagination .page-item.active .page-link {
+      background-color: var(--brand-color) !important;
+      border-color: var(--brand-color) !important;
+      color: #fff !important;
+    }
+    .pagination .page-link:focus, .pagination .page-link:hover {
+      color: #fff !important;
+      background-color: var(--brand-color) !important;
+      border-color: var(--brand-color) !important;
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -259,33 +277,35 @@ if (!empty($recompensas)) {
       <!-- Tabla de Recompensas -->
       <div class="card shadow-sm">
         <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
-          <h5 class="mb-0 text-danger-emphasis">Listado de Recompensas</h5>
-          <div class="d-flex gap-2 align-items-center flex-grow-1" style="max-width: 700px; margin-left: auto;">
-            <!-- Menú de ordenamiento -->
-            <div class="dropdown me-2">
-              <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-sort-down me-1"></i>Ordenar por
-              </button>
-              <ul class="dropdown-menu">
-                <li><h6 class="dropdown-header">Nombre</h6></li>
-                <li><a class="dropdown-item" href="#" data-sort="nombre-asc">A-Z</a></li>
-                <li><a class="dropdown-item" href="#" data-sort="nombre-desc">Z-A</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><h6 class="dropdown-header">Puntos Requeridos</h6></li>
-                <li><a class="dropdown-item" href="#" data-sort="puntos-desc">Mayor a menor</a></li>
-                <li><a class="dropdown-item" href="#" data-sort="puntos-asc">Menor a mayor</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><h6 class="dropdown-header">Stock</h6></li>
-                <li><a class="dropdown-item" href="#" data-sort="stock-desc">Más stock</a></li>
-                <li><a class="dropdown-item" href="#" data-sort="stock-asc">Menos stock</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><h6 class="dropdown-header">Estado</h6></li>
-                <li><a class="dropdown-item" href="#" data-sort="estado-desc">Activas primero</a></li>
-                <li><a class="dropdown-item" href="#" data-sort="estado-asc">Inactivas primero</a></li>
-              </ul>
+          <h5 class="mb-0 table-title">Listado de Recompensas</h5>
+          <div class="row w-100" style="max-width: 700px; margin-left: auto;">
+            <div class="col-auto pe-0 me-2">
+              <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background: var(--brand-color); border-color: var(--brand-color); color: #fff; min-width: 180px; height: 38px;">
+                  <i class="bi bi-sort-down me-1"></i>Ordenar por
+                </button>
+                <ul class="dropdown-menu">
+                  <li><h6 class="dropdown-header">Nombre</h6></li>
+                  <li><a class="dropdown-item" href="#" data-sort="nombre-asc">A-Z</a></li>
+                  <li><a class="dropdown-item" href="#" data-sort="nombre-desc">Z-A</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><h6 class="dropdown-header">Puntos Requeridos</h6></li>
+                  <li><a class="dropdown-item" href="#" data-sort="puntos-desc">Mayor a menor</a></li>
+                  <li><a class="dropdown-item" href="#" data-sort="puntos-asc">Menor a mayor</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><h6 class="dropdown-header">Stock</h6></li>
+                  <li><a class="dropdown-item" href="#" data-sort="stock-desc">Más stock</a></li>
+                  <li><a class="dropdown-item" href="#" data-sort="stock-asc">Menos stock</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><h6 class="dropdown-header">Estado</h6></li>
+                  <li><a class="dropdown-item" href="#" data-sort="estado-desc">Activas primero</a></li>
+                  <li><a class="dropdown-item" href="#" data-sort="estado-asc">Inactivas primero</a></li>
+                </ul>
+              </div>
             </div>
-            <!-- Buscador -->
-            <input type="text" id="searchInput" class="form-control flex-grow-1 w-100" placeholder="Buscar por nombre o descripción...">
+            <div class="col-8 ps-0">
+              <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre o descripción...">
+            </div>
           </div>
         </div>
         <div class="card-body">
