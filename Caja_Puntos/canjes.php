@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // Actualizar datos del canje
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/Canjes',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/Canjes',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // --- Registrar en Auditoría ---
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/auditoria',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -77,10 +77,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // --- VALIDACIONES ANTES DE CREAR EL CANJE ---
     $error_messages = [];
     
-    // 1. Verificar que la recompensa esté activa
+    // 1. Verificar que la recompensa esté activa y pertenezca a la empresa
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/recompensas',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/recompensas',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -97,25 +97,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     
     $recompensas = json_decode($recompensasResponse, true);
     $recompensaSeleccionada = null;
+    
+    // Filtrar recompensas por empresa y buscar la seleccionada
     foreach ($recompensas as $recompensa) {
         if ($recompensa['id'] == $_POST['recompensa_id']) {
-            $recompensaSeleccionada = $recompensa;
+            // Verificar que la recompensa pertenezca a la empresa actual
+            $recompensaEmpresaId = null;
+            if (isset($recompensa['empresa_id']['id'])) {
+                $recompensaEmpresaId = $recompensa['empresa_id']['id'];
+            } elseif (isset($recompensa['empresa_id']) && is_numeric($recompensa['empresa_id'])) {
+                $recompensaEmpresaId = $recompensa['empresa_id'];
+            }
+            
+            if ($recompensaEmpresaId == $empId) {
+                $recompensaSeleccionada = $recompensa;
+            }
             break;
         }
     }
     
     if (!$recompensaSeleccionada) {
-        $error_messages[] = "La recompensa seleccionada no existe.";
+        $error_messages[] = "La recompensa seleccionada no existe o no pertenece a esta empresa.";
     } elseif ($recompensaSeleccionada['estado'] != 1) {
         $error_messages[] = "La recompensa seleccionada está desactivada y no puede ser canjeada.";
     } elseif ($recompensaSeleccionada['stock'] <= 0) {
         $error_messages[] = "La recompensa seleccionada no tiene stock disponible.";
     }
     
-    // 2. Verificar que el cliente tenga suficientes puntos
+    // 2. Verificar que el cliente tenga suficientes puntos y pertenezca a la empresa
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/puntosclientes',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/puntosclientes',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -132,15 +144,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     
     $puntosClientes = json_decode($puntosResponse, true);
     $clientePuntos = null;
+    
+    // Buscar el cliente y verificar que pertenezca a la empresa actual
     foreach ($puntosClientes as $puntoCliente) {
         if ($puntoCliente['clienteId']['id'] == $_POST['cliente_id']) {
-            $clientePuntos = $puntoCliente;
+            // Verificar que el cliente pertenezca a la empresa actual
+            $clienteEmpresaId = null;
+            if (isset($puntoCliente['clienteId']['empresaId']['id'])) {
+                $clienteEmpresaId = $puntoCliente['clienteId']['empresaId']['id'];
+            } elseif (isset($puntoCliente['clienteId']['empresaId']) && is_numeric($puntoCliente['clienteId']['empresaId'])) {
+                $clienteEmpresaId = $puntoCliente['clienteId']['empresaId'];
+            }
+            
+            if ($clienteEmpresaId == $empId) {
+                $clientePuntos = $puntoCliente;
+            }
             break;
         }
     }
     
     if (!$clientePuntos) {
-        $error_messages[] = "El cliente seleccionado no existe en el sistema de puntos.";
+        $error_messages[] = "El cliente seleccionado no existe en el sistema de puntos o no pertenece a esta empresa.";
     } else {
         $puntosDisponibles = $clientePuntos['puntos_acumulados'] - $clientePuntos['puntos_utilizados'];
         $puntosRecompensa = $recompensaSeleccionada ? $recompensaSeleccionada['puntos_requeridos'] : 0;
@@ -161,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     $curl = curl_init();
 
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/Canjes',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/Canjes',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -192,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         
         $curl = curl_init();
         curl_setopt_array($curl, array(
-            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/puntosclientes',
+            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/puntosclientes',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -228,7 +252,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // --- Crear registro en el historial de puntos ---
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/historialpuntos',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/historialpuntos',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -266,7 +290,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         
         $curl = curl_init();
         curl_setopt_array($curl, array(
-            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/recompensas',
+            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/recompensas',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -303,7 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // --- Registrar en Auditoría ---
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/auditoria',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -354,7 +378,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
 // --- Llamada al endpoint para obtener todos los canjes ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/canjes',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/canjes',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -374,7 +398,24 @@ $canjesCompletos = json_decode($response, true);
 if (!is_array($canjesCompletos)) $canjesCompletos = [];
 
 // --- Filtrado para mostrar solo los canjes de la empresa actual ---
-$canjesEmpresa = array_filter($canjesCompletos, fn($c) => isset($c['cliente_id']['empresaId']['id']) && $c['cliente_id']['empresaId']['id'] == $empId);
+$canjesEmpresa = array_filter($canjesCompletos, function($canje) use ($empId) {
+    // Verificar si el cliente pertenece a la empresa actual
+    if (isset($canje['cliente_id']['empresaId']['id'])) {
+        return $canje['cliente_id']['empresaId']['id'] == $empId;
+    }
+    // Verificar si la recompensa pertenece a la empresa actual
+    if (isset($canje['recompensa']['empresa_id']['id'])) {
+        return $canje['recompensa']['empresa_id']['id'] == $empId;
+    }
+    // Verificar formato simple de empresa_id
+    if (isset($canje['cliente_id']['empresaId']) && is_numeric($canje['cliente_id']['empresaId'])) {
+        return $canje['cliente_id']['empresaId'] == $empId;
+    }
+    if (isset($canje['recompensa']['empresa_id']) && is_numeric($canje['recompensa']['empresa_id'])) {
+        return $canje['recompensa']['empresa_id'] == $empId;
+    }
+    return false;
+});
 
 // --- Ordenar canjes por fecha (más recientes primero) ---
 usort($canjesEmpresa, function($a, $b) {
@@ -384,7 +425,7 @@ usort($canjesEmpresa, function($a, $b) {
 // --- Llamada al endpoint de clientes para el formulario ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/puntosclientes',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/puntosclientes',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -401,12 +442,20 @@ curl_close($curl);
 
 $clientesCompletos = json_decode($response, true);
 if (!is_array($clientesCompletos)) $clientesCompletos = [];
-$clientesEmpresa = array_filter($clientesCompletos, fn($c) => isset($c['clienteId']['empresaId']['id']) && $c['clienteId']['empresaId']['id'] == $empId);
+$clientesEmpresa = array_filter($clientesCompletos, function($cliente) use ($empId) {
+    if (isset($cliente['clienteId']['empresaId']['id'])) {
+        return $cliente['clienteId']['empresaId']['id'] == $empId;
+    }
+    if (isset($cliente['clienteId']['empresaId']) && is_numeric($cliente['clienteId']['empresaId'])) {
+        return $cliente['clienteId']['empresaId'] == $empId;
+    }
+    return false;
+});
 
 // --- Llamada al endpoint de recompensas para el formulario ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/recompensas',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/recompensas',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -423,6 +472,17 @@ curl_close($curl);
 
 $recompensasCompletas = json_decode($response, true);
 if (!is_array($recompensasCompletas)) $recompensasCompletas = [];
+
+// --- Filtrar recompensas por empresa ---
+$recompensasEmpresa = array_filter($recompensasCompletas, function($recompensa) use ($empId) {
+    if (isset($recompensa['empresa_id']['id'])) {
+        return $recompensa['empresa_id']['id'] == $empId;
+    }
+    if (isset($recompensa['empresa_id']) && is_numeric($recompensa['empresa_id'])) {
+        return $recompensa['empresa_id'] == $empId;
+    }
+    return false;
+});
 
 // --- Cálculo de estadísticas ---
 $total_canjes = count($canjesEmpresa);
@@ -682,7 +742,7 @@ if (!empty($canjesEmpresa)) {
                 <label class="form-label fw-bold">Recompensa</label>
                 <select name="recompensa_id" id="recompensaSelect" class="form-select" required>
                   <option value="">Seleccionar Recompensa</option>
-                  <?php foreach ($recompensasCompletas as $recompensa): ?>
+                  <?php foreach ($recompensasEmpresa as $recompensa): ?>
                     <option value="<?= $recompensa['id'] ?>" data-puntos="<?= $recompensa['puntos_requeridos'] ?>" data-stock="<?= $recompensa['stock'] ?>" data-estado="<?= $recompensa['estado'] ?>">
                       <?= htmlspecialchars($recompensa['nombre']) ?> (<?= $recompensa['puntos_requeridos'] ?> pts) - Stock: <?= $recompensa['stock'] ?><?= $recompensa['estado'] == 0 ? ' - DESACTIVADA' : '' ?>
                     </option>
@@ -758,7 +818,7 @@ if (!empty($canjesEmpresa)) {
     // Pasamos los datos de PHP a JavaScript de forma segura
     const canjesData = <?php echo json_encode(array_values($canjesEmpresa)); ?>;
     const clientesData = <?php echo json_encode(array_values($clientesEmpresa)); ?>;
-    const recompensasData = <?php echo json_encode(array_values($recompensasCompletas)); ?>;
+    const recompensasData = <?php echo json_encode(array_values($recompensasEmpresa)); ?>;
     const viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));
 

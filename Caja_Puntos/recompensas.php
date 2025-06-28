@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // Actualizar datos de la recompensa
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/recompensas',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/recompensas',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -29,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         CURLOPT_CUSTOMREQUEST => 'POST',
         CURLOPT_POSTFIELDS => '{
             "id": '.$_POST['id'].',
+            "empresa_id": '.$empId.',
             "nombre": "'.$_POST['nombre'].'",
             "descripcion": "'.$_POST['descripcion'].'",
             "puntos_requeridos": '.$_POST['puntos_requeridos'].',
@@ -46,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // --- Registrar en Auditoría ---
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/auditoria',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -76,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // Crear nueva recompensa
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/recompensas',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/recompensas',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -85,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
         CURLOPT_CUSTOMREQUEST => 'POST',
         CURLOPT_POSTFIELDS => '{
+            "empresa_id": '.$empId.',
             "nombre": "'.$_POST['nombre'].'",
             "descripcion": "'.$_POST['descripcion'].'",
             "puntos_requeridos": '.$_POST['puntos_requeridos'].',
@@ -102,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     // --- Registrar en Auditoría ---
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/auditoria',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -133,7 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
 // --- Llamada al endpoint para obtener todas las recompensas ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/recompensas',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/recompensas',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -152,12 +154,18 @@ curl_close($curl);
 $recompensas = json_decode($response, true);
 if (!is_array($recompensas)) $recompensas = [];
 
+// --- Filtrar recompensas por empresa ---
+$recompensas_empresa = array_filter($recompensas, function($recompensa) use ($empId) {
+    return isset($recompensa['empresa_id']) && 
+           (is_array($recompensa['empresa_id']) ? $recompensa['empresa_id']['id'] == $empId : $recompensa['empresa_id'] == $empId);
+});
+
 // --- Cálculo de estadísticas ---
-$total_recompensas = count($recompensas);
-$total_stock = array_sum(array_column($recompensas, 'stock'));
+$total_recompensas = count($recompensas_empresa);
+$total_stock = array_sum(array_column($recompensas_empresa, 'stock'));
 $recompensa_mas_cara = 0;
-if (!empty($recompensas)) {
-    $puntos = array_column($recompensas, 'puntos_requeridos');
+if (!empty($recompensas_empresa)) {
+    $puntos = array_column($recompensas_empresa, 'puntos_requeridos');
     $recompensa_mas_cara = max($puntos);
 }
 
@@ -215,6 +223,10 @@ if (!empty($recompensas)) {
       color: #fff !important;
       background-color: var(--brand-color) !important;
       border-color: var(--brand-color) !important;
+    }
+    /* Títulos de la modal */
+    .modal-header.bg-light.text-danger, .modal-header.bg-light.text-danger h5, .modal-title, #createModalLabel, #editModalLabel, #viewModalLabel {
+      color: var(--brand-color) !important;
     }
   </style>
 </head>
@@ -426,7 +438,7 @@ if (!empty($recompensas)) {
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // Pasamos los datos de PHP a JavaScript de forma segura
-    const recompensasData = <?php echo json_encode(array_values($recompensas)); ?>;
+    const recompensasData = <?php echo json_encode(array_values($recompensas_empresa)); ?>;
     const viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));
 

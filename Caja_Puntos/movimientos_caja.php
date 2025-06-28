@@ -35,7 +35,7 @@ $sucursalSeleccionada = $_SESSION['sucursal_seleccionada'] ?? null;
 // --- Llamada al endpoint de sucursales para obtener el nombre ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/sucursales',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/sucursales',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -73,7 +73,7 @@ if ($sucursalSeleccionada) {
 // --- Obtener la última caja abierta para la sucursal seleccionada ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/caja',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/caja',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -127,7 +127,7 @@ if (!empty($cajasAbiertas)) {
 // --- Llamada al endpoint de movimientos de caja ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/movimientosCaja',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/movimientosCaja',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,

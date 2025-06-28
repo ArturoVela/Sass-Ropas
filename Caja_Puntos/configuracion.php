@@ -12,7 +12,7 @@ $user    = $_SESSION['user'];
 $empId   = $user['empresa']['id'];
 $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
 
-define('API_BASE',  'http://ropas.spring.informaticapp.com:1655/api/ropas');
+define('API_BASE',  'http://ropas.spring.informaticapp.com:1644/api/ropas');
 define('API_TOKEN', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmODNmOTk0ZDhjYjlkNWQ1YmVmYzM2YTM5ZWNkYTNiNzliYmI3Y2EyYjNlODQyODA0NTA3N2IyZjllOTUwODA5IiwiaWF0IjoxNzUwMjIxNDc2LCJleHAiOjQ5MDM4MjE0NzZ9.jCScz9PRkyb7W0_NeU66aLcCt2NxyatATJz7Pblo0SM');
 
 function fetchUsuarios(): array {
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $fecha_actual = date('Y-m-d\TH:i:s');
         $auditCurl = curl_init();
         curl_setopt_array($auditCurl, [
-          CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
+          CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/auditoria',
           CURLOPT_RETURNTRANSFER => true,
           CURLOPT_CUSTOMREQUEST => 'POST',
           CURLOPT_POSTFIELDS => '{"usuario": {"id":'.$user['id'].'},"sucursal": {"id":1},"evento": "CAMBIO DE CONTRASEÑA","descripcion": "El usuario '.$user['nombre'].' ha cambiado su contraseña.","fecha": "'.$fecha_actual.'","estado": 1}',

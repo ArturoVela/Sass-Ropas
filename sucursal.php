@@ -10,7 +10,7 @@ $empName = htmlspecialchars($user['empresa']['nombre'], ENT_QUOTES);
 $sucursalId = $_SESSION['sucursal_id'];
 $isUserAdmin = ($user['rol'] === 'ADMIN');
 
-define('API_BASE','http://ropas.spring.informaticapp.com:1655/api/ropas');
+define('API_BASE','http://ropas.spring.informaticapp.com:1644/api/ropas');
 define('API_TOKEN','eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmODNmOTk0ZDhjYjlkNWQ1YmVmYzM2YTM5ZWNkYTNiNzliYmI3Y2EyYjNlODQyODA0NTA3N2IyZjllOTUwODA5IiwiaWF0IjoxNzUwMjIxNDc2LCJleHAiOjQ5MDM4MjE0NzZ9.jCScz9PRkyb7W0_NeU66aLcCt2NxyatATJz7Pblo0SM');
 
 function apiRequest($url, $method = 'GET', $data = null) {

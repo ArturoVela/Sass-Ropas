@@ -10,7 +10,7 @@ $empresaId = $user['empresa']['id'];
 $empresa = $user['empresa']; // El objeto empresa completo ya está en la sesión
 
 // --- CONFIGURACIÓN Y FUNCIONES API ---
-define('API_BASE', 'http://ropas.spring.informaticapp.com:1655/api/ropas');
+define('API_BASE', 'http://ropas.spring.informaticapp.com:1644/api/ropas');
 define('API_TOKEN', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII');
 
 function apiRequest($url, $method = 'GET', $data = null) {

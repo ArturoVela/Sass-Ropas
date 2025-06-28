@@ -18,7 +18,7 @@ require_once 'config_colors.php';
 // --- Llamada al endpoint para obtener el historial ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/historialpuntos',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/historialpuntos',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -109,6 +109,10 @@ $puntos_canjeados = array_sum(array_column(array_filter($historialEmpresa, fn($h
       color: #fff !important;
       background-color: var(--brand-color) !important;
       border-color: var(--brand-color) !important;
+    }
+    /* Títulos de la modal */
+    .modal-header.bg-light.text-danger, .modal-header.bg-light.text-danger h5, .modal-title, #viewModalLabel {
+      color: var(--brand-color) !important;
     }
   </style>
 </head>

@@ -2,7 +2,7 @@
 session_start();
 
 // --- CONFIGURACIÓN ---
-define('API_URL',   'http://ropas.spring.informaticapp.com:1655/api/ropas/usuarios');
+define('API_URL',   'http://ropas.spring.informaticapp.com:1644/api/ropas/usuarios');
 define('API_TOKEN', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmODNmOTk0ZDhjYjlkNWQ1YmVmYzM2YTM5ZWNkYTNiNzliYmI3Y2EyYjNlODQyODA0NTA3N2IyZjllOTUwODA5IiwiaWF0IjoxNzUwMjIxNDc2LCJleHAiOjQ5MDM4MjE0NzZ9.jCScz9PRkyb7W0_NeU66aLcCt2NxyatATJz7Pblo0SM'); // tu token
 
 function fetchUsuarios(): array {
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // --- Registrar auditoría de Login ---
                     if ($usr['rol'] !== 'SUPERadmin') {
-                        $ch_audit = curl_init('http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria');
+                        $ch_audit = curl_init('http://ropas.spring.informaticapp.com:1644/api/ropas/auditoria');
                         $payload = json_encode([
                             'usuario' => ['id' => $usr['id']],
                             'evento' => 'INICIO DE SESIÓN',

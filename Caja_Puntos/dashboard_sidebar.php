@@ -11,7 +11,7 @@ $nombreSucursalSeleccionada = '';
 if (isset($_SESSION['sucursal_seleccionada'])) {
     $curl = curl_init();
     curl_setopt_array($curl, array(
-      CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/sucursales',
+      CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/sucursales',
       CURLOPT_RETURNTRANSFER => true,
       CURLOPT_ENCODING => '',
       CURLOPT_MAXREDIRS => 10,

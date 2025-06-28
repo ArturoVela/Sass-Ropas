@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
     
     $curl = curl_init();
     curl_setopt_array($curl, array(
-        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/puntosclientes',
+        CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/puntosclientes',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
         // --- Registrar en Auditoría ---
         $curl = curl_init();
         curl_setopt_array($curl, array(
-            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria',
+            CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/auditoria',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -175,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['id'])) {
 // --- Llamada al endpoint para obtener todos los puntos ---
 $curl = curl_init();
 curl_setopt_array($curl, array(
-  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1655/api/ropas/puntosclientes',
+  CURLOPT_URL => 'http://ropas.spring.informaticapp.com:1644/api/ropas/puntosclientes',
   CURLOPT_RETURNTRANSFER => true,
   CURLOPT_ENCODING => '',
   CURLOPT_MAXREDIRS => 10,
@@ -257,6 +257,10 @@ $total_disponibles = $total_acumulados - $total_utilizados;
       color: #fff !important;
       background-color: var(--brand-color) !important;
       border-color: var(--brand-color) !important;
+    }
+    /* Títulos de la modal */
+    .modal-header.bg-light.text-danger, .modal-header.bg-light.text-danger h5, .modal-title, #editModalLabel, #viewModalLabel {
+      color: var(--brand-color) !important;
     }
   </style>
 </head>
@@ -423,7 +427,7 @@ $total_disponibles = $total_acumulados - $total_utilizados;
   <script>
     // Pasamos los datos de PHP a JavaScript de forma segura
     const puntosData = <?php echo json_encode(array_values($puntosEmpresa)); ?>;
-    const API_BASE_URL = 'http://ropas.spring.informaticapp.com:1655/api/ropas';
+    const API_BASE_URL = 'http://ropas.spring.informaticapp.com:1644/api/ropas';
     const API_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI5ZmNjYjFhZTI2NjNlOTI0OWZmMDE4MTFmMmMwNzliNmUwNjc1MzNkZTJkNzZjZjhkMDViMTQ2YmE2YzM2N2YzIiwiaWF0IjoxNzUwMjg0ODI0LCJleHAiOjQ5MDM4ODQ4MjR9.k2nd5JJHRfOHUfPhyq7xAwRFledNZGQYQYFqThyTDII';
     const viewModal = new bootstrap.Modal(document.getElementById('viewModal'));
     const editModal = new bootstrap.Modal(document.getElementById('editModal'));

@@ -202,7 +202,7 @@ $pageTitle = $page_titles[$current_page_script] ?? 'Módulo';
 
 <header class="main-header">
     <div class="header-content">
-        <h1 class="page-title"><?= htmlspecialchars($pageTitle) ?></h1>
+        <h1 class="page-title">Sistema de Ventas Fashion API</h1>
         <div class="d-flex align-items-center">
             <!-- Botón de actualizar -->
             <button class="refresh-btn me-2" id="refreshBtn" title="Actualizar" onclick="manualRefresh()">

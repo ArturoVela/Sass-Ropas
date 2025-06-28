@@ -4,7 +4,7 @@ session_start();
 
 // --- Registrar auditoría ANTES de destruir la sesión ---
 if (isset($_SESSION['user']) && $_SESSION['user']['rol'] !== 'SUPERadmin') {
-    $ch = curl_init('http://ropas.spring.informaticapp.com:1655/api/ropas/auditoria');
+    $ch = curl_init('http://ropas.spring.informaticapp.com:1644/api/ropas/auditoria');
     $payload = json_encode([
         'usuario' => ['id' => $_SESSION['user']['id']],
         'evento' => 'CIERRE DE SESIÓN',
